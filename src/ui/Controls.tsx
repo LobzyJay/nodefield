@@ -8,7 +8,7 @@ import { downloadRaster, downloadSVG } from '../lib/export'
 // contextual disclosure: which shapes a param applies to
 const RADIAL_SHAPES = ['sphere', 'disc', 'cascade', 'helix', 'mobius', 'torus', 'superformula']
 const PHYLLO_SHAPES = ['sphere', 'disc', 'cascade', 'superformula']
-const sp = (get: (p: string) => unknown) => get('Structure.spread') as string
+const sp = (get: (p: string) => unknown) => get('Main.spread') as string
 
 // filename slug from the current look
 function slug() {
@@ -35,12 +35,8 @@ export function Controls() {
   const activePreset = useStore((s) => s.activePreset)
 
   const [, set] = useControls(() => ({
-    Structure: folder(
+    Main: folder(
       {
-        nodeCount: { value: P.nodeCount, min: 30, max: 900, step: 1, label: 'node count', onChange: mk('nodeCount') },
-        radius: { value: P.radius, min: 1, max: 7, step: 0.05, onChange: mk('radius') },
-        jitter: { value: P.jitter, min: 0, max: 1, step: 0.01, onChange: mk('jitter') },
-        curl: { value: P.curl, min: 0, max: 1.5, step: 0.01, onChange: mk('curl') },
         spread: {
           value: P.spread,
           options: {
@@ -55,6 +51,7 @@ export function Controls() {
             'torus knot': 'knot',
             superformula: 'superformula',
           },
+          label: 'shape',
           onChange: mk('spread'),
         },
         waveForm: {
@@ -64,9 +61,28 @@ export function Controls() {
           onChange: mk('waveForm'),
           render: (get) => sp(get) === 'wave',
         },
-        seed: { value: P.seed, min: 1, max: 999, step: 1, onChange: mk('seed') },
+        colorMode: {
+          value: P.colorMode,
+          label: 'color',
+          options: { spectrum: 'spectrum', nature: 'nature', single: 'single' },
+          onChange: mk('colorMode'),
+        },
+        accent: { value: P.accent, label: 'accent', onChange: mk('accent') },
+        emission: { value: P.emission, min: 0.2, max: 4, step: 0.05, label: 'glow', onChange: mk('emission') },
+        bloomIntensity: { value: P.bloomIntensity, min: 0, max: 4, step: 0.05, label: 'bloom', onChange: mk('bloomIntensity') },
+        atmosphere: { value: P.atmosphere, min: 0, max: 1.2, step: 0.01, label: 'depth haze', onChange: mk('atmosphere') },
       },
       { collapsed: false },
+    ),
+    Structure: folder(
+      {
+        nodeCount: { value: P.nodeCount, min: 30, max: 900, step: 1, label: 'node count', onChange: mk('nodeCount') },
+        radius: { value: P.radius, min: 1, max: 7, step: 0.05, onChange: mk('radius') },
+        jitter: { value: P.jitter, min: 0, max: 1, step: 0.01, onChange: mk('jitter') },
+        curl: { value: P.curl, min: 0, max: 1.5, step: 0.01, onChange: mk('curl') },
+        seed: { value: P.seed, min: 1, max: 999, step: 1, onChange: mk('seed') },
+      },
+      { collapsed: true },
     ),
     Math: folder(
       {
@@ -116,19 +132,11 @@ export function Controls() {
           render: (get) => RADIAL_SHAPES.includes(sp(get)) && get('Math.morphTo') !== 'off',
         },
       },
-      { collapsed: false },
+      { collapsed: true },
     ),
     Style: folder(
       {
-        colorMode: {
-          value: P.colorMode,
-          label: 'color mode',
-          options: { spectrum: 'spectrum', nature: 'nature', single: 'single' },
-          onChange: mk('colorMode'),
-        },
-        accent: { value: P.accent, label: 'accent', onChange: mk('accent') },
         coreOn: { value: P.coreOn, label: 'core', onChange: mk('coreOn') },
-        emission: { value: P.emission, min: 0.2, max: 4, step: 0.05, onChange: mk('emission') },
         thickness: { value: P.thickness, min: 0.5, max: 6, step: 0.1, onChange: mk('thickness') },
         glass: { value: P.glass, min: 0, max: 1.5, step: 0.05, label: 'glass sheen', onChange: mk('glass') },
         coreSize: { value: P.coreSize, min: 0.2, max: 3, step: 0.05, label: 'core size', onChange: mk('coreSize') },
@@ -138,11 +146,9 @@ export function Controls() {
     ),
     FX: folder(
       {
-        bloomIntensity: { value: P.bloomIntensity, min: 0, max: 4, step: 0.05, label: 'bloom', onChange: mk('bloomIntensity') },
         bloomThreshold: { value: P.bloomThreshold, min: 0, max: 1, step: 0.01, label: 'bloom threshold', onChange: mk('bloomThreshold') },
         grain: { value: P.grain, min: 0, max: 0.12, step: 0.001, onChange: mk('grain') },
         vignette: { value: P.vignette, min: 0, max: 1.5, step: 0.01, onChange: mk('vignette') },
-        atmosphere: { value: P.atmosphere, min: 0, max: 1.2, step: 0.01, label: 'depth haze', onChange: mk('atmosphere') },
         halftone: { value: P.halftone, onChange: mk('halftone') },
       },
       { collapsed: true },

@@ -15,10 +15,12 @@ import { snap } from '../store/store'
 
 const VERT = /* glsl */ `
   attribute vec3 aOffset;
+  attribute vec3 aOffsetB;
   attribute float aT;
   attribute float aAccent;
   attribute float aScale;
   uniform float uDotSize;
+  uniform float uMorph;
   varying vec2 vUv;
   varying float vT;
   varying float vAccent;
@@ -27,7 +29,8 @@ const VERT = /* glsl */ `
     vUv = position.xy;
     vT = aT;
     vAccent = aAccent;
-    vec4 mv = modelViewMatrix * vec4(aOffset, 1.0);
+    vec3 pos = mix(aOffset, aOffsetB, uMorph);
+    vec4 mv = modelViewMatrix * vec4(pos, 1.0);
     vViewDepth = -mv.z;
     mv.xy += position.xy * aScale * uDotSize;
     gl_Position = projectionMatrix * mv;
@@ -77,6 +80,7 @@ function buildGeometry(field: FieldData): InstancedBufferGeometry {
   const geo = new InstancedBufferGeometry()
   geo.setAttribute('position', new BufferAttribute(QUAD, 3))
   geo.setAttribute('aOffset', new InstancedBufferAttribute(field.nodePos, 3))
+  geo.setAttribute('aOffsetB', new InstancedBufferAttribute(field.nodePosB ?? field.nodePos, 3))
   geo.setAttribute('aT', new InstancedBufferAttribute(field.nodeT, 1))
   geo.setAttribute('aAccent', new InstancedBufferAttribute(field.nodeAccent, 1))
   geo.setAttribute('aScale', new InstancedBufferAttribute(field.nodeSize, 1))
@@ -107,6 +111,7 @@ export function Nodes({
       uAtmo: { value: 0.7 },
       uCamDist: { value: 8.5 },
       uFogR: { value: 3.2 },
+      uMorph: { value: 0 },
     }),
     [],
   )
@@ -125,6 +130,7 @@ export function Nodes({
     m.uniforms.uAtmo.value = s.atmosphere
     m.uniforms.uCamDist.value = state.camera.position.length()
     m.uniforms.uFogR.value = field.radius
+    m.uniforms.uMorph.value = field.nodePosB ? s.morph : 0
   })
 
   return (

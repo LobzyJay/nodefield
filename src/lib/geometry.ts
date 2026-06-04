@@ -1,6 +1,6 @@
 import { Vector3 } from 'three'
 import { mulberry32, valueNoise } from './rng'
-import { buildStrands, makeAttractor, makeGolden, makeHopf, makeKnot } from './strands'
+import { buildStrands, makeAttractor, makeKnot } from './strands'
 
 export type SpreadMode =
   | 'sphere'
@@ -11,14 +11,18 @@ export type SpreadMode =
   | 'torus'
   | 'wave'
   | 'attractor'
-  | 'hopf'
   | 'knot'
-  | 'golden'
   | 'superformula'
 
 export type WaveForm = 'curtain' | 'drape' | 'ripple' | 'flag'
 
 export type AttractorType = 'lorenz' | 'aizawa' | 'thomas' | 'halvorsen' | 'dadras'
+
+// morph target: another radial shape to flow toward, or 'off'
+export type MorphTarget = SpreadMode | 'off'
+
+// shapes that place node i via endpoint() — these can morph into one another
+const RADIAL = new Set(['sphere', 'disc', 'cascade', 'helix', 'mobius', 'torus', 'superformula'])
 
 // the golden angle, 137.5 degrees — the default phyllotaxis divergence
 export const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
@@ -40,6 +44,7 @@ export interface FieldParams {
   superM: number
   superN1: number
   superN2: number
+  morphTo: MorphTarget
 }
 
 export interface FieldData {
@@ -61,6 +66,10 @@ export interface FieldData {
   segT: Float32Array // segCount, spectrum t (per fiber)
   segAccent: Float32Array // segCount
   segSeed: Float32Array
+  // morph target geometry (same counts) — the shaders lerp A -> B by uMorph
+  segStartB?: Float32Array
+  segEndB?: Float32Array
+  nodePosB?: Float32Array
   radius: number
 }
 
@@ -324,9 +333,7 @@ export function buildField(p: FieldParams): FieldData {
   if (p.spread === 'wave') return buildWave(p)
   // curve-based math objects are built from polylines via the shared strand builder
   if (p.spread === 'attractor') return buildStrands(makeAttractor(p), p.radius)
-  if (p.spread === 'hopf') return buildStrands(makeHopf(p), p.radius)
   if (p.spread === 'knot') return buildStrands(makeKnot(p), p.radius)
-  if (p.spread === 'golden') return buildStrands(makeGolden(p), p.radius)
 
   const n = Math.max(1, Math.floor(p.nodeCount))
   const P = p.curl > 0.001 ? 22 : 2 // points per fiber (dense enough for smooth curls)
@@ -436,6 +443,20 @@ export function buildField(p: FieldParams): FieldData {
     }
   }
 
+  // morph: build the target radial shape with the SAME seed (so fibers correspond)
+  // and graft its positions; the shaders lerp A -> B by the cheap uMorph uniform.
+  let segStartB: Float32Array | undefined
+  let segEndB: Float32Array | undefined
+  let nodePosB: Float32Array | undefined
+  if (p.morphTo !== 'off' && p.morphTo !== p.spread && RADIAL.has(p.morphTo)) {
+    const fb = buildField({ ...p, spread: p.morphTo, morphTo: 'off' })
+    if (fb.segCount === segCount && fb.count === n) {
+      segStartB = fb.segStart
+      segEndB = fb.segEnd
+      nodePosB = fb.nodePos
+    }
+  }
+
   return {
     count: n,
     segCount,
@@ -453,6 +474,9 @@ export function buildField(p: FieldParams): FieldData {
     segT,
     segAccent,
     segSeed,
+    segStartB,
+    segEndB,
+    nodePosB,
     radius: p.radius,
   }
 }

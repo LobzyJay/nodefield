@@ -1,5 +1,5 @@
 import type { ColorMode } from '../lib/color'
-import type { AttractorType, SpreadMode, WaveForm } from '../lib/geometry'
+import type { AttractorType, MorphTarget, SpreadMode, WaveForm } from '../lib/geometry'
 
 // The data "inputs" riding the field: decimal, binary, hex, ascii glyphs, or a mix.
 export type NumberFormat = 'decimal' | 'binary' | 'hex' | 'ascii' | 'mixed'
@@ -27,6 +27,8 @@ export interface Params {
   superM: number
   superN1: number
   superN2: number
+  morphTo: MorphTarget // a radial shape to flow toward, or 'off' (structural)
+  morph: number // 0..1 morph amount (cheap GPU uniform)
 
   // Style (cheap — uniforms)
   colorMode: ColorMode
@@ -82,6 +84,7 @@ export const STRUCTURE_KEYS: (keyof Params)[] = [
   'superM',
   'superN1',
   'superN2',
+  'morphTo',
 ]
 
 // Keys that only rebuild the cheap color LUT texture (instant, no geometry rebuild).

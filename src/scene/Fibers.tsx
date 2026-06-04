@@ -17,6 +17,8 @@ import { snap } from '../store/store'
 const VERT = /* glsl */ `
   attribute vec3 aStart;
   attribute vec3 aEnd;
+  attribute vec3 aStartB;
+  attribute vec3 aEndB;
   attribute float aParamStart;
   attribute float aParamEnd;
   attribute float aT;
@@ -24,6 +26,7 @@ const VERT = /* glsl */ `
   attribute float aSeed;
   uniform vec2 uResolution;
   uniform float uThickness;
+  uniform float uMorph;
   varying float vParam;
   varying float vT;
   varying float vAccent;
@@ -36,8 +39,10 @@ const VERT = /* glsl */ `
     vParam = mix(aParamStart, aParamEnd, along);
     vT = aT; vAccent = aAccent; vSeed = aSeed;
 
-    vec4 mvStart = modelViewMatrix * vec4(aStart, 1.0);
-    vec4 mvEnd = modelViewMatrix * vec4(aEnd, 1.0);
+    vec3 sPos = mix(aStart, aStartB, uMorph);
+    vec3 ePos = mix(aEnd, aEndB, uMorph);
+    vec4 mvStart = modelViewMatrix * vec4(sPos, 1.0);
+    vec4 mvEnd = modelViewMatrix * vec4(ePos, 1.0);
     vViewDepth = -mix(mvStart.z, mvEnd.z, along);
     vec4 clipStart = projectionMatrix * mvStart;
     vec4 clipEnd = projectionMatrix * mvEnd;
@@ -129,6 +134,10 @@ function buildGeometry(field: FieldData): InstancedBufferGeometry {
   geo.setAttribute('position', new BufferAttribute(CORNERS, 3))
   geo.setAttribute('aStart', new InstancedBufferAttribute(field.segStart, 3))
   geo.setAttribute('aEnd', new InstancedBufferAttribute(field.segEnd, 3))
+  // morph targets reuse the A buffers when there's no morph, so the shader's
+  // mix() is a no-op and we never need a second shader variant
+  geo.setAttribute('aStartB', new InstancedBufferAttribute(field.segStartB ?? field.segStart, 3))
+  geo.setAttribute('aEndB', new InstancedBufferAttribute(field.segEndB ?? field.segEnd, 3))
   geo.setAttribute('aParamStart', new InstancedBufferAttribute(field.segParamStart, 1))
   geo.setAttribute('aParamEnd', new InstancedBufferAttribute(field.segParamEnd, 1))
   geo.setAttribute('aT', new InstancedBufferAttribute(field.segT, 1))
@@ -171,6 +180,7 @@ export function Fibers({
       uCamDist: { value: 8.5 },
       uFogR: { value: 3.2 },
       uGlass: { value: 0.7 },
+      uMorph: { value: 0 },
     }),
     [], // created once; values updated each frame
   )
@@ -194,6 +204,7 @@ export function Fibers({
     u.uCamDist.value = state.camera.position.length()
     u.uFogR.value = field.radius
     u.uGlass.value = s.glass
+    u.uMorph.value = field.segStartB ? s.morph : 0
     gl.getDrawingBufferSize(resVec.current)
   })
 

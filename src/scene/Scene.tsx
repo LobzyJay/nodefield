@@ -36,6 +36,7 @@ export function Scene() {
       superM: s.superM,
       superN1: s.superN1,
       superN2: s.superN2,
+      morphTo: s.morphTo,
     })
     ;(window as unknown as { nfField: unknown }).nfField = f
     return f

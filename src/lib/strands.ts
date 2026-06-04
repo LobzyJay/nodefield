@@ -212,58 +212,6 @@ export function makeAttractor(p: FieldParams): Strand[] {
   return strands
 }
 
-export function makeHopf(p: FieldParams): Strand[] {
-  const rand = mulberry32(p.seed * 2654435761)
-  const fibers = Math.min(90, Math.max(16, Math.round(p.nodeCount / 11)))
-  const fiberSteps = 96
-  const strands: Strand[] = []
-  const all: number[] = []
-  const perFiber: number[][] = []
-  for (let i = 0; i < fibers; i++) {
-    const yb = 1 - (2 * i) / Math.max(1, fibers - 1)
-    const theta = Math.acos(Math.max(-1, Math.min(1, yb)))
-    const phi = GA * i
-    const a = Math.cos(theta / 2)
-    const b = Math.sin(theta / 2)
-    const pts: number[] = []
-    for (let s = 0; s <= fiberSteps; s++) {
-      const psi = (s / fiberSteps) * Math.PI * 2
-      const w = a * Math.cos(psi)
-      const x = a * Math.sin(psi)
-      const yy = b * Math.cos(phi + psi)
-      const zz = b * Math.sin(phi + psi)
-      const denom = Math.max(0.18, 1 - w) // clamp the stereographic blowup near the pole
-      let px = x / denom
-      let py = yy / denom
-      let pz = zz / denom
-      // cap each point so a near-pole fiber can't spike out and dominate the framing
-      const mag = Math.hypot(px, py, pz)
-      const cap = 6
-      if (mag > cap) {
-        const k = cap / mag
-        px *= k
-        py *= k
-        pz *= k
-      }
-      pts.push(px, py, pz)
-      all.push(px, py, pz)
-    }
-    perFiber.push(pts)
-  }
-  normalize(all, p.radius, 1.5)
-  let cursor = 0
-  for (let i = 0; i < perFiber.length; i++) {
-    const k = perFiber[i].length / 3
-    const pts: number[] = []
-    for (let j = 0; j < k; j++) {
-      pts.push(all[cursor], all[cursor + 1], all[cursor + 2])
-      cursor += 3
-    }
-    strands.push({ pts, t: i / (fibers - 1), accent: 0, seed: rand(), closed: false, dot: 'none' })
-  }
-  return strands
-}
-
 export function makeKnot(p: FieldParams): Strand[] {
   const rand = mulberry32(p.seed * 2654435761)
   const pp = Math.max(1, Math.round(p.knotP))
@@ -279,29 +227,4 @@ export function makeKnot(p: FieldParams): Strand[] {
   }
   normalize(pts, p.radius, 1.35)
   return [{ pts, tEach, t: 0.5, accent: 0, seed: rand(), closed: true, dot: 'sparse' }]
-}
-
-export function makeGolden(p: FieldParams): Strand[] {
-  // logarithmic golden spiral: radius multiplies by PHI every quarter turn
-  const rand = mulberry32(p.seed * 2654435761)
-  const b = Math.log(PHI) / (Math.PI / 2)
-  const arms = 3
-  const turns = 4
-  const T = turns * Math.PI * 2
-  const stepsPerArm = Math.min(900, Math.max(220, Math.floor(p.nodeCount / arms)))
-  const scale = (p.radius * 1.35) / Math.exp(b * T)
-  const strands: Strand[] = []
-  for (let arm = 0; arm < arms; arm++) {
-    const rot = (arm / arms) * Math.PI * 2
-    const pts: number[] = []
-    const tEach: number[] = []
-    for (let i = 0; i <= stepsPerArm; i++) {
-      const th = (i / stepsPerArm) * T
-      const r = scale * Math.exp(b * th)
-      pts.push(r * Math.cos(th + rot), r * Math.sin(th + rot), 0)
-      tEach.push(i / stepsPerArm)
-    }
-    strands.push({ pts, tEach, t: arm / arms, accent: 0, seed: rand(), closed: false, dot: 'sparse' })
-  }
-  return strands
 }

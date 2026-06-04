@@ -20,14 +20,10 @@ function readout(s: Params): { title: string; lines: string[] } {
         title: s.spread === 'disc' ? 'phyllotaxis disc' : 'fibonacci sphere',
         lines: [`θᵢ = i · ${ga}°`, `Φ = ${PHI}   (golden angle)`],
       }
-    case 'golden':
-      return { title: 'logarithmic golden spiral', lines: ['r(θ) = e^{bθ}', `Φ = ${PHI}  ·  ×Φ per 90°`] }
     case 'attractor': {
       const a = ATTRACTOR_EQ[s.attractor] ?? ATTRACTOR_EQ.lorenz
       return { title: `${s.attractor} attractor`, lines: [a.eq, a.k] }
     }
-    case 'hopf':
-      return { title: 'Hopf fibration  S³ → S²', lines: ['fiber = stereographic{ e^{iψ}(z₁,z₂) }', 'each fiber a linked circle'] }
     case 'knot':
       return {
         title: `torus knot (${Math.round(s.knotP)}, ${Math.round(s.knotQ)})`,

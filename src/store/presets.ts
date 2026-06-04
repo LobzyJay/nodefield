@@ -17,6 +17,8 @@ export const DEFAULT_PARAMS: Params = {
   superM: 7,
   superN1: 0.2,
   superN2: 1.7,
+  morphTo: 'off',
+  morph: 0,
   // Style
   colorMode: 'spectrum',
   accent: '#FD607B',
@@ -62,8 +64,6 @@ export type PresetName =
   | 'Torus'
   | 'Disc'
   | 'Lorenz'
-  | 'Hopf'
-  | 'Golden'
   | 'Superform'
   | 'Knot'
 
@@ -77,8 +77,6 @@ export const PRESET_ORDER: PresetName[] = [
   'Torus',
   'Disc',
   'Lorenz',
-  'Hopf',
-  'Golden',
   'Superform',
   'Knot',
 ]
@@ -251,41 +249,6 @@ export const PRESETS: Record<PresetName, Partial<Params>> = {
     decimals: 3,
     pulseSpeed: 0.6,
     orbitSpeed: 0.05,
-  },
-  // Hopf fibration — linked circles covering the 3-sphere
-  Hopf: {
-    spread: 'hopf',
-    colorMode: 'spectrum',
-    accent: '#4C7CFF',
-    nodeCount: 520,
-    radius: 3.2,
-    thickness: 1.8,
-    glass: 0.4,
-    bloomIntensity: 1.5,
-    bloomThreshold: 0.1,
-    emission: 1.95,
-    density: 0.08,
-    dataMode: 'index',
-    decimals: 3,
-    orbitSpeed: 0.07,
-  },
-  // golden logarithmic spiral, for the design geeks
-  Golden: {
-    spread: 'golden',
-    colorMode: 'single',
-    accent: '#F2C84B',
-    nodeCount: 900,
-    radius: 3.3,
-    thickness: 2.8,
-    glass: 0.6,
-    bloomIntensity: 1.55,
-    bloomThreshold: 0.09,
-    emission: 2.1,
-    density: 0.12,
-    dataMode: 'parameter',
-    decimals: 3,
-    numberFormat: 'decimal',
-    orbitSpeed: 0.0,
   },
   // Gielis supershape
   Superform: {

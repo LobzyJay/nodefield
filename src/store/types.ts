@@ -1,8 +1,11 @@
 import type { ColorMode } from '../lib/color'
-import type { SpreadMode, WaveForm } from '../lib/geometry'
+import type { AttractorType, SpreadMode, WaveForm } from '../lib/geometry'
 
 // The data "inputs" riding the field: decimal, binary, hex, ascii glyphs, or a mix.
 export type NumberFormat = 'decimal' | 'binary' | 'hex' | 'ascii' | 'mixed'
+
+// What the telemetry numbers actually report.
+export type DataMode = 'magnitude' | 'index' | 'parameter' | 'radius'
 
 // Export framing for social / web (aspect ratio of the render).
 export type FrameMode = 'free' | 'square' | 'portrait' | 'story' | 'landscape' | 'og'
@@ -16,6 +19,14 @@ export interface Params {
   spread: SpreadMode
   waveForm: WaveForm
   seed: number
+  // Math (expensive — rebuild geometry)
+  divergenceAngle: number // degrees in the UI, radians in the field; phyllotaxis angle
+  attractor: AttractorType
+  knotP: number
+  knotQ: number
+  superM: number
+  superN1: number
+  superN2: number
 
   // Style (cheap — uniforms)
   colorMode: ColorMode
@@ -38,6 +49,8 @@ export interface Params {
   // Data (cheap) — the numeric "inputs" riding the field
   numbersOn: boolean
   numberFormat: NumberFormat
+  dataMode: DataMode
+  mathReadout: boolean
   density: number
   decimals: number
   flicker: number
@@ -62,6 +75,13 @@ export const STRUCTURE_KEYS: (keyof Params)[] = [
   'spread',
   'waveForm',
   'seed',
+  'divergenceAngle',
+  'attractor',
+  'knotP',
+  'knotQ',
+  'superM',
+  'superN1',
+  'superN2',
 ]
 
 // Keys that only rebuild the cheap color LUT texture (instant, no geometry rebuild).

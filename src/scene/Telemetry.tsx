@@ -3,11 +3,12 @@ import { useFrame } from '@react-three/fiber'
 import { Billboard, Text } from '@react-three/drei'
 import type { FieldData } from '../lib/geometry'
 import { useStore } from '../store/store'
-import type { NumberFormat } from '../store/types'
+import type { DataMode, NumberFormat } from '../store/types'
 import { FOCUS_GREEN } from '../lib/color'
 import { mulberry32 } from '../lib/rng'
 
 const MONO = '/fonts/JetBrainsMono-Regular.ttf'
+const INK = '#f4f7fb'
 const MAX_LABELS = 120
 
 interface Label {
@@ -17,13 +18,12 @@ interface Label {
   base: number
   sizeMul: number
   opacity: number
-  choice: number // 0 decimal / 1 binary / 2 hex (used by 'mixed')
+  choice: number
+  special: boolean // index is a Fibonacci number -> tinted
 }
 
-// printable-ASCII "code" glyphs for the ascii input mode
 const ASCII_GLYPHS = '!#$%&*+=<>?/\\|~^@ABCDEFXYZ0123456789'
 
-// The "input" riding the field — decimal, binary, hex or ascii glyphs.
 function formatValue(v: number, decimals: number, format: NumberFormat, choice: number): string {
   const f = format === 'mixed' ? (['decimal', 'binary', 'hex', 'ascii'] as const)[choice] : format
   const n = Math.max(0, Math.round(Math.abs(v)))
@@ -41,13 +41,36 @@ function formatValue(v: number, decimals: number, format: NumberFormat, choice: 
   return v.toFixed(decimals)
 }
 
-// Depth-tiered selection: most numbers small + faint in the background, a few large
-// + bright in the foreground — the layered "live data" feel of the references.
-function selectLabels(field: FieldData, density: number): Label[] {
+// what the number actually reports
+function valueFor(field: FieldData, idx: number, mode: DataMode): number {
+  if (mode === 'index') return idx
+  if (mode === 'parameter') return field.nodeParam[idx] * 100
+  if (mode === 'radius') {
+    const o = idx * 3
+    return (Math.hypot(field.nodePos[o], field.nodePos[o + 1], field.nodePos[o + 2]) / field.radius) * 100
+  }
+  return field.nodeMag[idx]
+}
+
+function fibSet(max: number): Set<number> {
+  const s = new Set<number>([0, 1, 2])
+  let a = 1
+  let b = 2
+  while (a <= max) {
+    s.add(a)
+    const c = a + b
+    a = b
+    b = c
+  }
+  return s
+}
+
+function selectLabels(field: FieldData, density: number, mode: DataMode): Label[] {
   const target = Math.min(MAX_LABELS, Math.max(0, Math.floor(field.count * density)))
   if (target <= 0) return []
   const step = field.count / target
   const rng = mulberry32(424242)
+  const fib = fibSet(field.count)
   const out: Label[] = []
   for (let i = 0; i < target; i++) {
     const idx = Math.min(field.count - 1, Math.round(i * step))
@@ -68,10 +91,11 @@ function selectLabels(field: FieldData, density: number): Label[] {
       x: field.nodePos[idx * 3] * 1.1,
       y: field.nodePos[idx * 3 + 1] * 1.1,
       z: field.nodePos[idx * 3 + 2] * 1.1,
-      base: field.nodeMag[idx],
+      base: valueFor(field, idx, mode),
       sizeMul,
       opacity,
       choice: Math.floor(rng() * 4),
+      special: fib.has(idx),
     })
   }
   return out
@@ -90,12 +114,13 @@ interface ExportLabel {
 export function Telemetry({ field, radius }: { field: FieldData; radius: number }) {
   const numbersOn = useStore((s) => s.numbersOn)
   const numberFormat = useStore((s) => s.numberFormat)
+  const dataMode = useStore((s) => s.dataMode)
   const density = useStore((s) => s.density)
   const decimals = useStore((s) => s.decimals)
   const flicker = useStore((s) => s.flicker)
   const focusOn = useStore((s) => s.focusOn)
 
-  const labels = useMemo(() => selectLabels(field, density), [field, density])
+  const labels = useMemo(() => selectLabels(field, density, dataMode), [field, density, dataMode])
   const refs = useRef<(any | null)[]>([])
   const focusRef = useRef<any>(null)
   const acc = useRef(0)
@@ -103,21 +128,21 @@ export function Telemetry({ field, radius }: { field: FieldData; radius: number 
 
   const baseSize = radius * 0.037
   const focusSize = radius * 0.072
+  const effDecimals = dataMode === 'index' ? 0 : decimals
 
-  // snapshot of the live labels (text + position) for the SVG exporter
   const exportLabels = useMemo<ExportLabel[]>(
     () =>
       labels.map((l) => ({
         x: l.x,
         y: l.y,
         z: l.z,
-        text: formatValue(l.base, decimals, numberFormat, l.choice),
+        text: formatValue(l.base, effDecimals, numberFormat, l.choice),
         size: baseSize * l.sizeMul,
         opacity: l.opacity,
-        color: '#f4f7fb',
+        color: l.special ? FOCUS_GREEN : INK,
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [labels, numberFormat, decimals],
+    [labels, numberFormat, effDecimals],
   )
   ;(window as unknown as { nfLabels: ExportLabel[] }).nfLabels = numbersOn ? exportLabels : []
 
@@ -127,12 +152,12 @@ export function Telemetry({ field, radius }: { field: FieldData; radius: number 
     const interval = 1 / Math.max(0.5, flicker)
     if (acc.current < interval) return
     acc.current = 0
-    const amp = Math.pow(10, -decimals) * 60
+    const amp = dataMode === 'index' ? 0 : Math.pow(10, -effDecimals) * 60
     for (let i = 0; i < labels.length; i++) {
       const t = refs.current[i]
       if (!t) continue
       const v = labels[i].base + (rng() - 0.5) * amp
-      const text = formatValue(v, decimals, numberFormat, labels[i].choice)
+      const text = formatValue(v, effDecimals, numberFormat, labels[i].choice)
       t.text = text
       if (exportLabels[i]) exportLabels[i].text = text
       t.sync?.()
@@ -154,7 +179,7 @@ export function Telemetry({ field, radius }: { field: FieldData; radius: number 
             ref={(r) => (refs.current[i] = r)}
             font={MONO}
             fontSize={baseSize * l.sizeMul}
-            color="#f4f7fb"
+            color={l.special ? FOCUS_GREEN : INK}
             fillOpacity={l.opacity}
             anchorX="center"
             anchorY="middle"
@@ -165,7 +190,7 @@ export function Telemetry({ field, radius }: { field: FieldData; radius: number 
             outlineOpacity={0.55}
             depthOffset={-2}
           >
-            {formatValue(l.base, decimals, numberFormat, l.choice)}
+            {formatValue(l.base, effDecimals, numberFormat, l.choice)}
           </Text>
         </Billboard>
       ))}

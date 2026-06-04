@@ -106,3 +106,29 @@ canvas {
 #leva__root {
   z-index: 10;
 }
+
+/* live math readout, bottom-left above the hint */
+.readout {
+  position: fixed;
+  left: 24px;
+  bottom: 44px;
+  z-index: 6;
+  pointer-events: none;
+  font-family: var(--mono);
+  max-width: 60ch;
+}
+
+.readout .readout-title {
+  color: var(--accent);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.readout .readout-line {
+  color: #79828f;
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+}

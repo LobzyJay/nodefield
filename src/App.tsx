@@ -2,6 +2,7 @@ import { Canvas } from '@react-three/fiber'
 import { Leva } from 'leva'
 import { Scene } from './scene/Scene'
 import { Controls } from './ui/Controls'
+import { MathReadout } from './ui/MathReadout'
 import { useStore } from './store/store'
 import type { FrameMode } from './store/types'
 
@@ -114,6 +115,7 @@ export default function App() {
         </div>
       </div>
 
+      <MathReadout />
       <Leva theme={levaTheme} titleBar={{ title: 'NODE TREE' }} collapsed={false} />
       <Controls />
     </>

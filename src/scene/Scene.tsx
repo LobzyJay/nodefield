@@ -29,6 +29,13 @@ export function Scene() {
       spread: s.spread,
       waveForm: s.waveForm,
       seed: s.seed,
+      divergenceAngle: (s.divergenceAngle * Math.PI) / 180,
+      attractor: s.attractor,
+      knotP: s.knotP,
+      knotQ: s.knotQ,
+      superM: s.superM,
+      superN1: s.superN1,
+      superN2: s.superN2,
     })
     ;(window as unknown as { nfField: unknown }).nfField = f
     return f

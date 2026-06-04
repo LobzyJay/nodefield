@@ -9,10 +9,18 @@ export const DEFAULT_PARAMS: Params = {
   spread: 'sphere',
   waveForm: 'curtain',
   seed: 1,
+  // Math
+  divergenceAngle: 137.50776, // degrees (the golden angle)
+  attractor: 'lorenz',
+  knotP: 3,
+  knotQ: 2,
+  superM: 7,
+  superN1: 0.2,
+  superN2: 1.7,
   // Style
   colorMode: 'spectrum',
   accent: '#FD607B',
-  coreOn: true,
+  coreOn: false,
   coreSize: 1.0,
   thickness: 1.4,
   glass: 0.7,
@@ -28,6 +36,8 @@ export const DEFAULT_PARAMS: Params = {
   // Data
   numbersOn: true,
   numberFormat: 'decimal',
+  dataMode: 'magnitude',
+  mathReadout: true,
   density: 0.24,
   decimals: 3,
   flicker: 6,
@@ -51,6 +61,11 @@ export type PresetName =
   | 'Möbius'
   | 'Torus'
   | 'Disc'
+  | 'Lorenz'
+  | 'Hopf'
+  | 'Golden'
+  | 'Superform'
+  | 'Knot'
 
 export const PRESET_ORDER: PresetName[] = [
   'Nucleus',
@@ -61,6 +76,11 @@ export const PRESET_ORDER: PresetName[] = [
   'Möbius',
   'Torus',
   'Disc',
+  'Lorenz',
+  'Hopf',
+  'Golden',
+  'Superform',
+  'Knot',
 ]
 
 export const PRESETS: Record<PresetName, Partial<Params>> = {
@@ -212,5 +232,97 @@ export const PRESETS: Record<PresetName, Partial<Params>> = {
     density: 0.22,
     decimals: 2,
     pulseSpeed: 0.25,
+  },
+  // strange attractor (Lorenz) — a glowing trajectory
+  Lorenz: {
+    spread: 'attractor',
+    attractor: 'lorenz',
+    colorMode: 'spectrum',
+    accent: '#35E0C8',
+    nodeCount: 1200,
+    radius: 3.2,
+    thickness: 1.7,
+    glass: 0.5,
+    bloomIntensity: 1.35,
+    bloomThreshold: 0.12,
+    emission: 1.7,
+    density: 0.1,
+    dataMode: 'parameter',
+    decimals: 3,
+    pulseSpeed: 0.6,
+    orbitSpeed: 0.05,
+  },
+  // Hopf fibration — linked circles covering the 3-sphere
+  Hopf: {
+    spread: 'hopf',
+    colorMode: 'spectrum',
+    accent: '#4C7CFF',
+    nodeCount: 520,
+    radius: 3.2,
+    thickness: 1.8,
+    glass: 0.4,
+    bloomIntensity: 1.5,
+    bloomThreshold: 0.1,
+    emission: 1.95,
+    density: 0.08,
+    dataMode: 'index',
+    decimals: 3,
+    orbitSpeed: 0.07,
+  },
+  // golden logarithmic spiral, for the design geeks
+  Golden: {
+    spread: 'golden',
+    colorMode: 'single',
+    accent: '#F2C84B',
+    nodeCount: 900,
+    radius: 3.3,
+    thickness: 2.8,
+    glass: 0.6,
+    bloomIntensity: 1.55,
+    bloomThreshold: 0.09,
+    emission: 2.1,
+    density: 0.12,
+    dataMode: 'parameter',
+    decimals: 3,
+    numberFormat: 'decimal',
+    orbitSpeed: 0.0,
+  },
+  // Gielis supershape
+  Superform: {
+    spread: 'superformula',
+    superM: 7,
+    superN1: 0.2,
+    superN2: 1.7,
+    colorMode: 'spectrum',
+    accent: '#FF5C7A',
+    nodeCount: 520,
+    radius: 3.2,
+    jitter: 0,
+    curl: 0,
+    thickness: 1.5,
+    bloomIntensity: 1.4,
+    bloomThreshold: 0.16,
+    emission: 1.6,
+    density: 0.2,
+    decimals: 3,
+  },
+  // torus knot (p, q)
+  Knot: {
+    spread: 'knot',
+    knotP: 3,
+    knotQ: 2,
+    colorMode: 'spectrum',
+    accent: '#7B3FE4',
+    nodeCount: 900,
+    radius: 3.2,
+    thickness: 2.2,
+    glass: 0.7,
+    bloomIntensity: 1.4,
+    bloomThreshold: 0.14,
+    emission: 1.6,
+    density: 0.12,
+    dataMode: 'parameter',
+    decimals: 3,
+    orbitSpeed: 0.06,
   },
 }

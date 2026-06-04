@@ -1,9 +1,28 @@
 import { Vector3 } from 'three'
 import { mulberry32, valueNoise } from './rng'
+import { buildStrands, makeAttractor, makeGolden, makeHopf, makeKnot } from './strands'
 
-export type SpreadMode = 'sphere' | 'disc' | 'cascade' | 'helix' | 'mobius' | 'torus' | 'wave'
+export type SpreadMode =
+  | 'sphere'
+  | 'disc'
+  | 'cascade'
+  | 'helix'
+  | 'mobius'
+  | 'torus'
+  | 'wave'
+  | 'attractor'
+  | 'hopf'
+  | 'knot'
+  | 'golden'
+  | 'superformula'
 
 export type WaveForm = 'curtain' | 'drape' | 'ripple' | 'flag'
+
+export type AttractorType = 'lorenz' | 'aizawa' | 'thomas' | 'halvorsen' | 'dadras'
+
+// the golden angle, 137.5 degrees — the default phyllotaxis divergence
+export const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
+export const PHI = (1 + Math.sqrt(5)) / 2
 
 export interface FieldParams {
   nodeCount: number
@@ -13,6 +32,14 @@ export interface FieldParams {
   spread: SpreadMode
   seed: number
   waveForm: WaveForm
+  // math params
+  divergenceAngle: number // radians, phyllotaxis angle (default golden)
+  attractor: AttractorType
+  knotP: number
+  knotQ: number
+  superM: number
+  superN1: number
+  superN2: number
 }
 
 export interface FieldData {
@@ -24,6 +51,7 @@ export interface FieldData {
   nodeT: Float32Array // count
   nodeAccent: Float32Array // count (0 none, 1 green, 2 red, 3 white)
   nodeMag: Float32Array // count, telemetry base value
+  nodeParam: Float32Array // count, generator parameter 0..1 (for real telemetry)
   nodeSize: Float32Array // count, relative dot size
   // fiber segment instance data (fat lines)
   segStart: Float32Array // segCount * 3
@@ -47,33 +75,46 @@ function smoothstep01(a: number, b: number, x: number) {
 const STRIP_ROWS = 6
 const TUBE_ROWS = 14
 
-function endpoint(
-  spread: SpreadMode,
-  i: number,
-  n: number,
-  radius: number,
-  seedPhase: number,
-  out: Vector3,
-) {
-  switch (spread) {
+function superShape(angle: number, m: number, n1: number, n2: number, n3: number) {
+  const t = (m * angle) / 4
+  const a = Math.pow(Math.abs(Math.cos(t)), n2)
+  const b = Math.pow(Math.abs(Math.sin(t)), n3)
+  return Math.pow(a + b, -1 / n1)
+}
+
+function endpoint(p: FieldParams, i: number, n: number, seedPhase: number, out: Vector3) {
+  const radius = p.radius
+  const ga = p.divergenceAngle
+  switch (p.spread) {
     case 'sphere': {
       const y = 1 - (2 * i) / Math.max(1, n - 1)
       const r = Math.sqrt(Math.max(0, 1 - y * y))
-      const th = GA * i
+      const th = ga * i
       out.set(Math.cos(th) * r, y, Math.sin(th) * r).multiplyScalar(radius)
       break
     }
     case 'disc': {
       // face-on phyllotaxis disc (XY plane): burst reads radially from the front
       const r = Math.sqrt((i + 0.5) / n) * radius
-      const th = GA * i
+      const th = ga * i
       out.set(Math.cos(th) * r, Math.sin(th) * r, 0)
+      break
+    }
+    case 'superformula': {
+      // Gielis supershape: a sphere whose radius is modulated by the superformula
+      const y = 1 - (2 * i) / Math.max(1, n - 1)
+      const lat = Math.asin(Math.max(-1, Math.min(1, y)))
+      const lon = ga * i
+      const r1 = superShape(lon, p.superM, p.superN1, p.superN2, p.superN2)
+      const r2 = superShape(lat, p.superM, p.superN1, p.superN2, p.superN2)
+      const rr = Math.min(2.2, r1 * r2) * radius * 0.9
+      out.set(Math.cos(lat) * Math.cos(lon) * rr, Math.sin(lat) * rr, Math.cos(lat) * Math.sin(lon) * rr)
       break
     }
     case 'cascade': {
       // draping funnel: layered rings spiralling downward, widening as they fall
       const layer = (i + 0.5) / n
-      const th = GA * i + layer * Math.PI * 6
+      const th = ga * i + layer * Math.PI * 6
       const rr = radius * (0.25 + 0.85 * layer)
       const y = (0.7 - layer * 1.35) * radius
       out.set(Math.cos(th) * rr, y, Math.sin(th) * rr)
@@ -135,6 +176,7 @@ function buildWave(p: FieldParams): FieldData {
   const nodeT = new Float32Array(count)
   const nodeAccent = new Float32Array(count)
   const nodeMag = new Float32Array(count)
+  const nodeParam = new Float32Array(count)
   const nodeSize = new Float32Array(count)
 
   const segStart = new Float32Array(segCount * 3)
@@ -234,6 +276,7 @@ function buildWave(p: FieldParams): FieldData {
       nodeT[idx] = ct
       nodeAccent[idx] = accent
       nodeMag[idx] = (0.5 + 0.5 * valueNoise(cur.x * 0.6, cur.y * 0.6, cur.z * 0.6 + 5)) * 104
+      nodeParam[idx] = u
       // dots only at the ribbon ends keep the field clean
       nodeSize[idx] = c === 0 || c === cols - 1 ? 0.8 + rand() * 0.5 : 0
 
@@ -264,6 +307,7 @@ function buildWave(p: FieldParams): FieldData {
     nodeT,
     nodeAccent,
     nodeMag,
+    nodeParam,
     nodeSize,
     segStart,
     segEnd,
@@ -278,6 +322,11 @@ function buildWave(p: FieldParams): FieldData {
 
 export function buildField(p: FieldParams): FieldData {
   if (p.spread === 'wave') return buildWave(p)
+  // curve-based math objects are built from polylines via the shared strand builder
+  if (p.spread === 'attractor') return buildStrands(makeAttractor(p), p.radius)
+  if (p.spread === 'hopf') return buildStrands(makeHopf(p), p.radius)
+  if (p.spread === 'knot') return buildStrands(makeKnot(p), p.radius)
+  if (p.spread === 'golden') return buildStrands(makeGolden(p), p.radius)
 
   const n = Math.max(1, Math.floor(p.nodeCount))
   const P = p.curl > 0.001 ? 22 : 2 // points per fiber (dense enough for smooth curls)
@@ -288,6 +337,7 @@ export function buildField(p: FieldParams): FieldData {
   const nodeT = new Float32Array(n)
   const nodeAccent = new Float32Array(n)
   const nodeMag = new Float32Array(n)
+  const nodeParam = new Float32Array(n)
   const nodeSize = new Float32Array(n)
 
   const segStart = new Float32Array(segCount * 3)
@@ -316,8 +366,9 @@ export function buildField(p: FieldParams): FieldData {
     // placement) so colors intermix across the whole burst, as in the reference
     const ct = rand()
     nodeT[i] = ct
+    nodeParam[i] = n > 1 ? i / (n - 1) : 0
 
-    endpoint(p.spread, i, n, p.radius, seedPhase, end)
+    endpoint(p, i, n, seedPhase, end)
 
     // index-seeded jitter (organic, non-lattice)
     end.x += (rand() - 0.5) * 2 * p.jitter * p.radius * 0.16
@@ -393,6 +444,7 @@ export function buildField(p: FieldParams): FieldData {
     nodeT,
     nodeAccent,
     nodeMag,
+    nodeParam,
     nodeSize,
     segStart,
     segEnd,

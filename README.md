@@ -117,4 +117,4 @@ set('nodeCount', x)       -> rebuild geometry after 80ms (debounced)
 ## Fonts
 
 `public/fonts/JetBrainsMono-*.ttf` (committed) are used by the 3D numeric labels
-(troika SDF text) and the UI. They must ship with the build.
+(troika SDF text) and the UI. 

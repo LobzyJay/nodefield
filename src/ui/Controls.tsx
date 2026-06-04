@@ -181,7 +181,14 @@ export function Controls() {
         orbitSpeed: { value: P.orbitSpeed, min: 0, max: 0.6, step: 0.005, label: 'orbit speed', onChange: mk('orbitSpeed') },
         pulseSpeed: { value: P.pulseSpeed, min: 0, max: 2, step: 0.01, label: 'pulse speed', onChange: mk('pulseSpeed') },
         phase: { value: P.phase, min: 0, max: 4, step: 0.05, label: 'index phase', onChange: mk('phase') },
+        intro: {
+          value: P.intro,
+          label: 'entrance',
+          options: { grow: 'grow', morph: 'morph' },
+          onChange: mk('intro'),
+        },
         drawIn: { value: P.drawIn, label: 'assembly draw-in', onChange: mk('drawIn') },
+        'replay grow': button(() => useStore.getState().replayGrow()),
       },
       { collapsed: true },
     ),
@@ -268,6 +275,7 @@ export function Controls() {
       orbitSpeed: s.orbitSpeed,
       pulseSpeed: s.pulseSpeed,
       phase: s.phase,
+      intro: s.intro,
       drawIn: s.drawIn,
       frame: s.frame,
     } as any)
@@ -278,6 +286,18 @@ export function Controls() {
     }, 150)
     return () => clearTimeout(id)
   }, [activePreset, set])
+
+  // a morph entrance drives morphTo behind the scenes (prev shape -> 'off');
+  // mirror it back so the panel's "morph to" never shows a stale transient
+  const morphToVal = useStore((s) => s.morphTo)
+  useEffect(() => {
+    suppressWrites = true
+    set({ morphTo: morphToVal } as any)
+    const id = setTimeout(() => {
+      suppressWrites = false
+    }, 150)
+    return () => clearTimeout(id)
+  }, [morphToVal, set])
 
   return null
 }

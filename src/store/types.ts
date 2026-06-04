@@ -10,6 +10,9 @@ export type DataMode = 'magnitude' | 'index' | 'parameter' | 'radius'
 // Export framing for social / web (aspect ratio of the render).
 export type FrameMode = 'free' | 'square' | 'portrait' | 'story' | 'landscape' | 'og'
 
+// How a preset enters: grow it in from the core, or morph from the current shape.
+export type IntroMode = 'grow' | 'morph'
+
 export interface Params {
   // Structure (expensive — rebuilds geometry)
   nodeCount: number
@@ -63,6 +66,7 @@ export interface Params {
   pulseSpeed: number
   phase: number
   drawIn: boolean
+  intro: IntroMode // preset entrance: grow-in vs morph from current shape
 
   // Export (cheap)
   frame: FrameMode

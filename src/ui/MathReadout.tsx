@@ -11,7 +11,23 @@ const ATTRACTOR_EQ: Record<string, { eq: string; k: string }> = {
   dadras: { eq: 'ẋ=y−ax+byz  ẏ=cy−xz+z  ż=dxy−ez', k: 'a=3 b=2.7 c=1.7' },
 }
 
+function shapeLabel(spread: string): string {
+  return spread === 'mobius' ? 'Möbius' : spread
+}
+
 function readout(s: Params): { title: string; lines: string[] } {
+  const r = baseReadout(s)
+  // when blending toward another shape, show the path the maths is taking
+  if (s.morphTo !== 'off' && s.morphTo !== s.spread && s.morph > 0.001) {
+    r.lines = [
+      ...r.lines,
+      `${shapeLabel(s.spread)} → ${shapeLabel(s.morphTo)}   ${Math.round(s.morph * 100)}% blend`,
+    ]
+  }
+  return r
+}
+
+function baseReadout(s: Params): { title: string; lines: string[] } {
   const ga = s.divergenceAngle.toFixed(3)
   switch (s.spread) {
     case 'sphere':
@@ -58,7 +74,9 @@ export function MathReadout() {
   const knotQ = useStore((st) => st.knotQ)
   const superM = useStore((st) => st.superM)
   const divergenceAngle = useStore((st) => st.divergenceAngle)
-  void [spread, attractor, knotP, knotQ, superM, divergenceAngle]
+  const morphTo = useStore((st) => st.morphTo)
+  const morph = useStore((st) => st.morph)
+  void [spread, attractor, knotP, knotQ, superM, divergenceAngle, morphTo, morph]
   if (!on) return null
   const r = readout(useStore.getState())
   return (

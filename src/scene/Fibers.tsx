@@ -152,10 +152,12 @@ export function Fibers({
   field,
   lut,
   drawInValue,
+  morphValue,
 }: {
   field: FieldData
   lut: Texture | null
   drawInValue: { current: number }
+  morphValue: { current: number }
 }) {
   const { gl } = useThree()
   const matRef = useRef<ShaderMaterial>(null)
@@ -204,7 +206,7 @@ export function Fibers({
     u.uCamDist.value = state.camera.position.length()
     u.uFogR.value = field.radius
     u.uGlass.value = s.glass
-    u.uMorph.value = field.segStartB ? s.morph : 0
+    u.uMorph.value = field.segStartB ? morphValue.current : 0
     gl.getDrawingBufferSize(resVec.current)
   })
 

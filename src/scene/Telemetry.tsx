@@ -15,6 +15,9 @@ interface Label {
   x: number
   y: number
   z: number
+  xB: number // morph-target position (same node on the shape we flow toward)
+  yB: number
+  zB: number
   base: number
   sizeMul: number
   opacity: number
@@ -72,6 +75,7 @@ function selectLabels(field: FieldData, density: number, mode: DataMode): Label[
   const rng = mulberry32(424242)
   const fib = fibSet(field.count)
   const out: Label[] = []
+  const posB = field.nodePosB
   for (let i = 0; i < target; i++) {
     const idx = Math.min(field.count - 1, Math.round(i * step))
     const t = rng()
@@ -87,10 +91,16 @@ function selectLabels(field: FieldData, density: number, mode: DataMode): Label[
       sizeMul = 1.18 + rng() * 0.3
       opacity = 0.9 + rng() * 0.1
     }
+    const x = field.nodePos[idx * 3] * 1.1
+    const y = field.nodePos[idx * 3 + 1] * 1.1
+    const z = field.nodePos[idx * 3 + 2] * 1.1
     out.push({
-      x: field.nodePos[idx * 3] * 1.1,
-      y: field.nodePos[idx * 3 + 1] * 1.1,
-      z: field.nodePos[idx * 3 + 2] * 1.1,
+      x,
+      y,
+      z,
+      xB: posB ? posB[idx * 3] * 1.1 : x,
+      yB: posB ? posB[idx * 3 + 1] * 1.1 : y,
+      zB: posB ? posB[idx * 3 + 2] * 1.1 : z,
       base: valueFor(field, idx, mode),
       sizeMul,
       opacity,
@@ -111,7 +121,15 @@ interface ExportLabel {
   color: string
 }
 
-export function Telemetry({ field, radius }: { field: FieldData; radius: number }) {
+export function Telemetry({
+  field,
+  radius,
+  morphValue,
+}: {
+  field: FieldData
+  radius: number
+  morphValue: { current: number }
+}) {
   const numbersOn = useStore((s) => s.numbersOn)
   const numberFormat = useStore((s) => s.numberFormat)
   const dataMode = useStore((s) => s.dataMode)
@@ -122,7 +140,9 @@ export function Telemetry({ field, radius }: { field: FieldData; radius: number 
 
   const labels = useMemo(() => selectLabels(field, density, dataMode), [field, density, dataMode])
   const refs = useRef<(any | null)[]>([])
+  const bbRefs = useRef<(any | null)[]>([])
   const focusRef = useRef<any>(null)
+  const hasMorph = !!field.nodePosB
   const acc = useRef(0)
   const rng = useMemo(() => mulberry32(98765), [field])
 
@@ -148,6 +168,16 @@ export function Telemetry({ field, radius }: { field: FieldData; radius: number 
 
   useFrame((_, dt) => {
     if (!numbersOn) return
+    // numbers ride their nodes along the morph path (every frame, for smoothness)
+    if (hasMorph) {
+      const mv = morphValue.current
+      for (let i = 0; i < labels.length; i++) {
+        const bb = bbRefs.current[i]
+        if (!bb) continue
+        const l = labels[i]
+        bb.position.set(l.x + (l.xB - l.x) * mv, l.y + (l.yB - l.y) * mv, l.z + (l.zB - l.z) * mv)
+      }
+    }
     acc.current += dt
     const interval = 1 / Math.max(0.5, flicker)
     if (acc.current < interval) return
@@ -174,7 +204,7 @@ export function Telemetry({ field, radius }: { field: FieldData; radius: number 
   return (
     <group renderOrder={4}>
       {labels.map((l, i) => (
-        <Billboard key={i} position={[l.x, l.y, l.z]}>
+        <Billboard key={i} ref={(r) => (bbRefs.current[i] = r)} position={[l.x, l.y, l.z]}>
           <Text
             ref={(r) => (refs.current[i] = r)}
             font={MONO}

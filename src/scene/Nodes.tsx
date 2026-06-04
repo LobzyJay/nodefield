@@ -93,10 +93,12 @@ export function Nodes({
   field,
   lut,
   drawInValue,
+  morphValue,
 }: {
   field: FieldData
   lut: Texture | null
   drawInValue: { current: number }
+  morphValue: { current: number }
 }) {
   const matRef = useRef<ShaderMaterial>(null)
   const geometry = useMemo(() => buildGeometry(field), [field])
@@ -130,7 +132,7 @@ export function Nodes({
     m.uniforms.uAtmo.value = s.atmosphere
     m.uniforms.uCamDist.value = state.camera.position.length()
     m.uniforms.uFogR.value = field.radius
-    m.uniforms.uMorph.value = field.nodePosB ? s.morph : 0
+    m.uniforms.uMorph.value = field.nodePosB ? morphValue.current : 0
   })
 
   return (

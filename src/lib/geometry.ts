@@ -22,7 +22,7 @@ export type AttractorType = 'lorenz' | 'aizawa' | 'thomas' | 'halvorsen' | 'dadr
 export type MorphTarget = SpreadMode | 'off'
 
 // shapes that place node i via endpoint() — these can morph into one another
-const RADIAL = new Set(['sphere', 'disc', 'cascade', 'helix', 'mobius', 'torus', 'superformula'])
+export const RADIAL = new Set(['sphere', 'disc', 'cascade', 'helix', 'mobius', 'torus', 'superformula'])
 
 // the golden angle, 137.5 degrees — the default phyllotaxis divergence
 export const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))

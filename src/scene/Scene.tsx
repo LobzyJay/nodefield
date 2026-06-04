@@ -14,6 +14,8 @@ import { Effects } from './Effects'
 export function Scene() {
   const structureVersion = useStore((s) => s.structureVersion)
   const lutVersion = useStore((s) => s.lutVersion)
+  const introMorphId = useStore((s) => s.introMorphId)
+  const growReplayId = useStore((s) => s.growReplayId)
   const coreOn = useStore((s) => s.coreOn)
   const spread = useStore((s) => s.spread)
   // the wave sheet has no centre, so the glowing core never belongs there
@@ -53,11 +55,38 @@ export function Scene() {
   const groupRef = useRef<Group>(null)
   const drawInRef = useRef(1.2)
   const startRef = useRef(-1)
+  // effective morph amount the GPU + telemetry read (manual slider OR entrance)
+  const morphRef = useRef(0)
+  const morphing = useRef(false)
+  const forceGrow = useRef(false)
+  const skipNextGrow = useRef(false)
+  const seenMorphId = useRef(introMorphId)
 
-  // replay assembly draw-in whenever geometry rebuilds
+  // a geometry rebuild either replays the grow draw-in, or — when it's the
+  // rebuild that kicked off a morph entrance — reveals fully and morphs instead
   useEffect(() => {
+    if (snap().introMorphId !== seenMorphId.current) {
+      seenMorphId.current = snap().introMorphId
+      morphing.current = true
+      morphRef.current = 1
+      drawInRef.current = 1.2 // fully assembled; the morph carries the motion
+      return
+    }
+    if (skipNextGrow.current) {
+      skipNextGrow.current = false
+      drawInRef.current = 1.2
+      return
+    }
     startRef.current = -1
   }, [structureVersion])
+
+  // explicit "replay" of the grow entrance, even if draw-in is toggled off
+  useEffect(() => {
+    if (growReplayId === 0) return
+    morphing.current = false
+    startRef.current = -1
+    forceGrow.current = true
+  }, [growReplayId])
 
   useFrame((state, dt) => {
     const s = snap()
@@ -69,10 +98,27 @@ export function Scene() {
       w.nfCamera = state.camera
     }
     const t = state.clock.elapsedTime
-    if (s.drawIn) {
+
+    // morph entrance: ease the field from the old shape (1) to the new one (0),
+    // then drop the morph target so the geometry rebuilds clean
+    if (morphing.current) {
+      morphRef.current -= dt / 1.15
+      if (morphRef.current <= 0) {
+        morphRef.current = 0
+        morphing.current = false
+        skipNextGrow.current = true // the morphTo:'off' rebuild must not grow
+        snap().bulkSet({ morphTo: 'off' })
+      }
+    } else {
+      morphRef.current = s.morph // manual morph slider
+    }
+
+    // grow draw-in (suppressed while a morph entrance is playing)
+    if (!morphing.current && (s.drawIn || forceGrow.current)) {
       if (startRef.current < 0) startRef.current = t
       drawInRef.current = Math.min(1.2, ((t - startRef.current) / 1.8) * 1.2)
-    } else {
+      if (drawInRef.current >= 1.2) forceGrow.current = false
+    } else if (!morphing.current && !forceGrow.current) {
       drawInRef.current = 1.2
     }
     // depth haze for the troika telemetry text (custom shaders fade themselves)
@@ -85,9 +131,9 @@ export function Scene() {
       <fogExp2 attach="fog" args={['#06070A', 0.05]} />
       <group ref={groupRef}>
         {showCore && <Core />}
-        <Fibers field={field} lut={lut} drawInValue={drawInRef} />
-        <Nodes field={field} lut={lut} drawInValue={drawInRef} />
-        <Telemetry field={field} radius={field.radius} />
+        <Fibers field={field} lut={lut} drawInValue={drawInRef} morphValue={morphRef} />
+        <Nodes field={field} lut={lut} drawInValue={drawInRef} morphValue={morphRef} />
+        <Telemetry field={field} radius={field.radius} morphValue={morphRef} />
       </group>
       <OrbitControls
         makeDefault

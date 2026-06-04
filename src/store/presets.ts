@@ -49,6 +49,7 @@ export const DEFAULT_PARAMS: Params = {
   pulseSpeed: 0.35,
   phase: 1.0,
   drawIn: true,
+  intro: 'grow',
   // Export
   frame: 'free',
 }

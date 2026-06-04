@@ -3,6 +3,7 @@ import { Leva } from 'leva'
 import { Scene } from './scene/Scene'
 import { Controls } from './ui/Controls'
 import { MathReadout } from './ui/MathReadout'
+import { PresetBar } from './ui/PresetBar'
 import { useStore } from './store/store'
 import type { FrameMode } from './store/types'
 
@@ -116,6 +117,7 @@ export default function App() {
       </div>
 
       <MathReadout />
+      <PresetBar />
       <Leva theme={levaTheme} titleBar={{ title: 'NODE TREE' }} collapsed={false} />
       <Controls />
     </>

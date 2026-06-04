@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { button, folder, useControls } from 'leva'
 import { useStore } from '../store/store'
-import { DEFAULT_PARAMS, PRESET_ORDER } from '../store/presets'
+import { DEFAULT_PARAMS } from '../store/presets'
 import type { Params } from '../store/types'
 import { downloadRaster, downloadSVG } from '../lib/export'
 
@@ -33,10 +33,6 @@ function mk<K extends keyof Params>(key: K) {
 export function Controls() {
   const P = useStore.getState()
   const activePreset = useStore((s) => s.activePreset)
-
-  const presetButtons = Object.fromEntries(
-    PRESET_ORDER.map((name) => [name, button(() => useStore.getState().applyPreset(name))]),
-  )
 
   const [, set] = useControls(() => ({
     Structure: folder(
@@ -183,7 +179,6 @@ export function Controls() {
       },
       { collapsed: true },
     ),
-    Presets: folder(presetButtons, { collapsed: false }),
     Export: folder(
       {
         frame: {
@@ -270,10 +265,11 @@ export function Controls() {
       drawIn: s.drawIn,
       frame: s.frame,
     } as any)
-    // release the guard after Leva has processed the programmatic set()
+    // release the guard after Leva has processed the programmatic set() AND any
+    // onChange fired by controls mounting/unmounting from contextual render()
     const id = setTimeout(() => {
       suppressWrites = false
-    }, 0)
+    }, 150)
     return () => clearTimeout(id)
   }, [activePreset, set])
 

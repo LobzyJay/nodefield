@@ -107,6 +107,72 @@ canvas {
   z-index: 10;
 }
 
+/* floating preset strip, bottom-centre */
+.presetbar {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px;
+  max-width: 78vw;
+  overflow-x: auto;
+  background: rgba(11, 13, 18, 0.66);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 11px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  scrollbar-width: none;
+}
+.presetbar::-webkit-scrollbar {
+  display: none;
+}
+
+.preset-group {
+  display: flex;
+  gap: 4px;
+}
+
+.preset-div {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  flex: none;
+}
+
+.chip {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: #aeb6c2;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 5px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.14s ease,
+    color 0.14s ease,
+    border-color 0.14s ease;
+}
+.chip:hover {
+  color: #eef2f7;
+  background: rgba(255, 255, 255, 0.055);
+}
+.chip:active {
+  transform: translateY(1px);
+}
+.chip-active {
+  color: #eef2f7;
+  background: rgba(91, 140, 255, 0.16);
+  border-color: rgba(91, 140, 255, 0.5);
+}
+
 /* live math readout, bottom-left above the hint */
 .readout {
   position: fixed;

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Leva } from 'leva'
 import { Scene } from './scene/Scene'
@@ -5,6 +6,7 @@ import { Controls } from './ui/Controls'
 import { MathReadout } from './ui/MathReadout'
 import { PresetBar } from './ui/PresetBar'
 import { useStore } from './store/store'
+import { PRESET_ORDER } from './store/presets'
 import type { FrameMode } from './store/types'
 
 // Aspect ratio per export frame (social / web).
@@ -73,6 +75,56 @@ const levaTheme = {
   borderWidths: { root: '0px', input: '1px', focus: '1px', hover: '1px' },
 }
 
+// Keyboard layer for power users: cycle presets, replay the entrance, reseed,
+// and hide the whole UI for a clean capture. Returns whether the UI is hidden.
+function useHotkeys(): boolean {
+  const [uiHidden, setUiHidden] = useState(false)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      // never hijack typing inside a Leva field
+      const el = e.target as HTMLElement | null
+      const tag = el?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || el?.isContentEditable) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      const s = useStore.getState()
+
+      const cycle = (dir: number) => {
+        const order = PRESET_ORDER
+        const i = order.indexOf(s.activePreset as (typeof order)[number])
+        const base = i < 0 ? (dir > 0 ? -1 : 0) : i
+        const ni = (((base + dir) % order.length) + order.length) % order.length
+        s.applyPreset(order[ni])
+      }
+
+      switch (e.key) {
+        case 'ArrowRight':
+          e.preventDefault()
+          cycle(1)
+          break
+        case 'ArrowLeft':
+          e.preventDefault()
+          cycle(-1)
+          break
+        case ' ':
+          e.preventDefault()
+          s.replayGrow()
+          break
+        case 'r':
+        case 'R':
+          s.set('seed', 1 + (s.seed % 998) + 1)
+          break
+        case 'h':
+        case 'H':
+          setUiHidden((v) => !v)
+          break
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+  return uiHidden
+}
+
 function HudMeta() {
   const preset = useStore((s) => s.activePreset)
   const spread = useStore((s) => s.spread)
@@ -85,6 +137,7 @@ function HudMeta() {
 }
 
 export default function App() {
+  const uiHidden = useHotkeys()
   return (
     <>
       <FrameBox>
@@ -105,20 +158,25 @@ export default function App() {
         </Canvas>
       </FrameBox>
 
-      <div className="overlay">
-        <div className="brand">
-          <span className="dot" />
-          NODEFIELD
-        </div>
-        <HudMeta />
-        <div className="hint">
-          <b>drag</b> orbit · <b>scroll</b> zoom · edit the node tree →
-        </div>
-      </div>
+      {!uiHidden && (
+        <>
+          <div className="overlay">
+            <div className="brand">
+              <span className="dot" />
+              NODEFIELD
+            </div>
+            <HudMeta />
+            <div className="hint">
+              <b>drag</b> orbit · <b>scroll</b> zoom · <b>←→</b> presets · <b>space</b> replay · <b>R</b> seed ·{' '}
+              <b>H</b> hide
+            </div>
+          </div>
 
-      <MathReadout />
-      <PresetBar />
-      <Leva theme={levaTheme} titleBar={{ title: 'NODE TREE' }} collapsed={false} />
+          <MathReadout />
+          <PresetBar />
+        </>
+      )}
+      <Leva theme={levaTheme} titleBar={{ title: 'NODE TREE' }} collapsed={false} hidden={uiHidden} />
       <Controls />
     </>
   )

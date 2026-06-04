@@ -5,6 +5,11 @@ import { DEFAULT_PARAMS, PRESET_ORDER } from '../store/presets'
 import type { Params } from '../store/types'
 import { downloadRaster, downloadSVG } from '../lib/export'
 
+// contextual disclosure: which shapes a param applies to
+const RADIAL_SHAPES = ['sphere', 'disc', 'cascade', 'helix', 'mobius', 'torus', 'superformula']
+const PHYLLO_SHAPES = ['sphere', 'disc', 'cascade', 'superformula']
+const sp = (get: (p: string) => unknown) => get('Structure.spread') as string
+
 // filename slug from the current look
 function slug() {
   const s = useStore.getState()
@@ -61,6 +66,7 @@ export function Controls() {
           label: 'wave form',
           options: { curtain: 'curtain', drape: 'drape', ripple: 'ripple', flag: 'flag' },
           onChange: mk('waveForm'),
+          render: (get) => sp(get) === 'wave',
         },
         seed: { value: P.seed, min: 1, max: 999, step: 1, onChange: mk('seed') },
       },
@@ -75,17 +81,19 @@ export function Controls() {
           step: 0.001,
           label: 'divergence °',
           onChange: mk('divergenceAngle'),
+          render: (get) => PHYLLO_SHAPES.includes(sp(get)),
         },
         attractor: {
           value: P.attractor,
           options: { lorenz: 'lorenz', aizawa: 'aizawa', thomas: 'thomas', halvorsen: 'halvorsen', dadras: 'dadras' },
           onChange: mk('attractor'),
+          render: (get) => sp(get) === 'attractor',
         },
-        knotP: { value: P.knotP, min: 1, max: 12, step: 1, label: 'knot p', onChange: mk('knotP') },
-        knotQ: { value: P.knotQ, min: 1, max: 12, step: 1, label: 'knot q', onChange: mk('knotQ') },
-        superM: { value: P.superM, min: 1, max: 20, step: 1, label: 'super m', onChange: mk('superM') },
-        superN1: { value: P.superN1, min: 0.1, max: 6, step: 0.05, label: 'super n1', onChange: mk('superN1') },
-        superN2: { value: P.superN2, min: 0.1, max: 6, step: 0.05, label: 'super n2', onChange: mk('superN2') },
+        knotP: { value: P.knotP, min: 1, max: 12, step: 1, label: 'knot p', onChange: mk('knotP'), render: (get) => sp(get) === 'knot' },
+        knotQ: { value: P.knotQ, min: 1, max: 12, step: 1, label: 'knot q', onChange: mk('knotQ'), render: (get) => sp(get) === 'knot' },
+        superM: { value: P.superM, min: 1, max: 20, step: 1, label: 'super m', onChange: mk('superM'), render: (get) => sp(get) === 'superformula' },
+        superN1: { value: P.superN1, min: 0.1, max: 6, step: 0.05, label: 'super n1', onChange: mk('superN1'), render: (get) => sp(get) === 'superformula' },
+        superN2: { value: P.superN2, min: 0.1, max: 6, step: 0.05, label: 'super n2', onChange: mk('superN2'), render: (get) => sp(get) === 'superformula' },
         morphTo: {
           value: P.morphTo,
           label: 'morph to',
@@ -100,10 +108,19 @@ export function Controls() {
             superformula: 'superformula',
           },
           onChange: mk('morphTo'),
+          render: (get) => RADIAL_SHAPES.includes(sp(get)),
         },
-        morph: { value: P.morph, min: 0, max: 1, step: 0.01, label: 'morph', onChange: mk('morph') },
+        morph: {
+          value: P.morph,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: 'morph',
+          onChange: mk('morph'),
+          render: (get) => RADIAL_SHAPES.includes(sp(get)) && get('Math.morphTo') !== 'off',
+        },
       },
-      { collapsed: true },
+      { collapsed: false },
     ),
     Style: folder(
       {

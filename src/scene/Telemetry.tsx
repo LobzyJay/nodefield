@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Billboard, Text } from '@react-three/drei'
 import type { FieldData } from '../lib/geometry'
@@ -143,6 +143,12 @@ export function Telemetry({
   const bbRefs = useRef<(any | null)[]>([])
   const focusRef = useRef<any>(null)
   const hasMorph = !!field.nodePosB
+  // skip the per-frame position pass unless the morph value actually moved;
+  // -1 forces one re-apply whenever the label set is rebuilt
+  const prevMv = useRef(-1)
+  useEffect(() => {
+    prevMv.current = -1
+  }, [labels])
   const acc = useRef(0)
   const rng = useMemo(() => mulberry32(98765), [field])
 
@@ -168,9 +174,10 @@ export function Telemetry({
 
   useFrame((_, dt) => {
     if (!numbersOn) return
-    // numbers ride their nodes along the morph path (every frame, for smoothness)
-    if (hasMorph) {
+    // numbers ride their nodes along the morph path — only when it's moving
+    if (hasMorph && morphValue.current !== prevMv.current) {
       const mv = morphValue.current
+      prevMv.current = mv
       for (let i = 0; i < labels.length; i++) {
         const bb = bbRefs.current[i]
         if (!bb) continue

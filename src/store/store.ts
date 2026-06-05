@@ -14,6 +14,7 @@ interface StoreState extends Params {
   applyPreset: (name: PresetName) => void
   bulkSet: (patch: Partial<Params>) => void
   replayGrow: () => void
+  reseed: () => void
 }
 
 const STRUCTURE = new Set<string>(STRUCTURE_KEYS as string[])
@@ -121,6 +122,11 @@ export const useStore = create<StoreState>((setState, getState) => {
     },
 
     replayGrow: () => setState((s) => ({ growReplayId: s.growReplayId + 1 })),
+
+    reseed: () => {
+      // a genuine reseed — full 1..999 range, not a deterministic walk
+      getState().set('seed', 1 + Math.floor(Math.random() * 999))
+    },
   }
 })
 

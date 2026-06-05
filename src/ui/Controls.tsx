@@ -2,11 +2,11 @@ import { useEffect } from 'react'
 import { button, folder, useControls } from 'leva'
 import { useStore } from '../store/store'
 import { DEFAULT_PARAMS } from '../store/presets'
+import { RADIAL } from '../lib/geometry'
 import type { Params } from '../store/types'
 import { downloadRaster, downloadSVG } from '../lib/export'
 
 // contextual disclosure: which shapes a param applies to
-const RADIAL_SHAPES = ['sphere', 'disc', 'cascade', 'helix', 'mobius', 'torus', 'superformula']
 const PHYLLO_SHAPES = ['sphere', 'disc', 'cascade', 'superformula']
 const sp = (get: (p: string) => unknown) => get('Main.spread') as string
 
@@ -17,14 +17,30 @@ function slug() {
   return `${p}-${s.spread}`.toLowerCase().replace(/[^a-z0-9-]/g, '')
 }
 
-// While we programmatically push preset values back into Leva, its onChange
-// handlers fire — suppress those so a preset application doesn't flip to "Custom".
-let suppressWrites = false
+// While we programmatically push values back into Leva, its onChange handlers
+// fire — suppress those so they don't flip the preset to "Custom". Refcounted so
+// overlapping windows (preset sync + morphTo mirror) compose instead of one
+// timer clearing another's guard early.
+let suppressDepth = 0
+function suppressWindow(ms: number): () => void {
+  suppressDepth++
+  let released = false
+  const release = () => {
+    if (released) return
+    released = true
+    suppressDepth = Math.max(0, suppressDepth - 1)
+  }
+  const id = setTimeout(release, ms)
+  return () => {
+    clearTimeout(id)
+    release()
+  }
+}
 
 // Build an onChange handler that writes to the store only on real user changes.
 function mk<K extends keyof Params>(key: K) {
   return (value: Params[K]) => {
-    if (suppressWrites) return
+    if (suppressDepth > 0) return
     const st = useStore.getState()
     if (st[key] !== value) st.set(key, value)
   }
@@ -120,7 +136,7 @@ export function Controls() {
             superformula: 'superformula',
           },
           onChange: mk('morphTo'),
-          render: (get) => RADIAL_SHAPES.includes(sp(get)),
+          render: (get) => RADIAL.has(sp(get)),
         },
         morph: {
           value: P.morph,
@@ -129,7 +145,7 @@ export function Controls() {
           step: 0.01,
           label: 'morph',
           onChange: mk('morph'),
-          render: (get) => RADIAL_SHAPES.includes(sp(get)) && get('Math.morphTo') !== 'off',
+          render: (get) => RADIAL.has(sp(get)) && get('Math.morphTo') !== 'off',
         },
       },
       { collapsed: true },
@@ -221,7 +237,7 @@ export function Controls() {
         'copy config URL': button(() => {
           navigator.clipboard?.writeText(location.href)
         }),
-        reseed: button(() => useStore.getState().set('seed', 1 + Math.floor(useStore.getState().seed % 998) + 1)),
+        reseed: button(() => useStore.getState().reseed()),
         reset: button(() => useStore.getState().bulkSet({ ...DEFAULT_PARAMS })),
       },
       { collapsed: true },
@@ -232,7 +248,7 @@ export function Controls() {
   useEffect(() => {
     if (activePreset === 'Custom') return
     const s = useStore.getState()
-    suppressWrites = true
+    const end = suppressWindow(150)
     set({
       nodeCount: s.nodeCount,
       radius: s.radius,
@@ -279,24 +295,18 @@ export function Controls() {
       drawIn: s.drawIn,
       frame: s.frame,
     } as any)
-    // release the guard after Leva has processed the programmatic set() AND any
-    // onChange fired by controls mounting/unmounting from contextual render()
-    const id = setTimeout(() => {
-      suppressWrites = false
-    }, 150)
-    return () => clearTimeout(id)
+    // release after Leva has processed the programmatic set() AND any onChange
+    // fired by controls mounting/unmounting from contextual render()
+    return end
   }, [activePreset, set])
 
   // a morph entrance drives morphTo behind the scenes (prev shape -> 'off');
   // mirror it back so the panel's "morph to" never shows a stale transient
   const morphToVal = useStore((s) => s.morphTo)
   useEffect(() => {
-    suppressWrites = true
+    const end = suppressWindow(150)
     set({ morphTo: morphToVal } as any)
-    const id = setTimeout(() => {
-      suppressWrites = false
-    }, 150)
-    return () => clearTimeout(id)
+    return end
   }, [morphToVal, set])
 
   return null

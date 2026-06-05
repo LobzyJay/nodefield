@@ -77,13 +77,26 @@ export function Scene() {
       drawInRef.current = 1.2
       return
     }
+    // a structural edit landed mid-morph: end the morph so morphTo doesn't
+    // linger, then let this rebuild grow in as the new shape
+    if (morphing.current) {
+      morphing.current = false
+      morphRef.current = 0
+      if (snap().morphTo !== 'off') snap().bulkSet({ morphTo: 'off' })
+    }
     startRef.current = -1
   }, [structureVersion])
 
   // explicit "replay" of the grow entrance, even if draw-in is toggled off
   useEffect(() => {
     if (growReplayId === 0) return
-    morphing.current = false
+    // if a morph entrance was mid-flight, cancel it cleanly so morphTo doesn't
+    // linger (a stale target would otherwise reappear on the next morph slider)
+    if (morphing.current) {
+      morphing.current = false
+      morphRef.current = 0
+      snap().bulkSet({ morphTo: 'off' })
+    }
     startRef.current = -1
     forceGrow.current = true
   }, [growReplayId])
@@ -102,7 +115,8 @@ export function Scene() {
     // morph entrance: ease the field from the old shape (1) to the new one (0),
     // then drop the morph target so the geometry rebuilds clean
     if (morphing.current) {
-      morphRef.current -= dt / 1.15
+      // clamp dt so a long frame gap (tab refocus / hitch) eases instead of popping
+      morphRef.current -= Math.min(dt, 0.05) / 1.15
       if (morphRef.current <= 0) {
         morphRef.current = 0
         morphing.current = false

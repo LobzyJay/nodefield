@@ -111,7 +111,7 @@ function useHotkeys(): boolean {
           break
         case 'r':
         case 'R':
-          s.set('seed', 1 + (s.seed % 998) + 1)
+          s.reseed()
           break
         case 'h':
         case 'H':

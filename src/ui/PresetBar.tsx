@@ -1,10 +1,7 @@
 import { useStore } from '../store/store'
-import type { PresetName } from '../store/presets'
+import { MATH_PRESETS, SHAPE_PRESETS, type PresetName } from '../store/presets'
 
 // shapes on the left, math fields on the right (divider between)
-const SHAPE_PRESETS: PresetName[] = ['Nucleus', 'Wave', 'Drape', 'Cascade', 'Helix', 'Möbius', 'Torus', 'Disc']
-const MATH_PRESETS: PresetName[] = ['Lorenz', 'Superform', 'Knot']
-
 export function PresetBar() {
   const active = useStore((s) => s.activePreset)
   const apply = useStore((s) => s.applyPreset)

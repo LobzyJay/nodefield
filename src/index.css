@@ -121,58 +121,87 @@ canvas {
   align-items: center;
   gap: 8px;
   padding: 5px;
-  max-width: 78vw;
-  overflow-x: auto;
+  /* overflow must stay visible so the preset popover can render above the bar */
+  overflow: visible;
   background: rgba(11, 13, 18, 0.66);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 11px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-  scrollbar-width: none;
-}
-.presetbar::-webkit-scrollbar {
-  display: none;
 }
 
-.preset-group {
+/* preset menu button — shows the current preset, opens the catalog popover */
+.preset-menu-wrap {
+  position: relative;
   display: flex;
-  gap: 4px;
 }
-
-/* family switcher — reads as a quiet segmented control, not preset chips */
-.preset-tabs {
-  display: flex;
-  gap: 2px;
-  flex: none;
+.preset-menu {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #cbd2dc;
+  border-color: rgba(255, 255, 255, 0.12);
 }
-.preset-tab {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.02em;
-  color: #79828f;
-  background: transparent;
-  border: none;
-  border-radius: 5px;
-  padding: 5px 8px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    color 0.14s var(--ease-out),
-    background 0.14s var(--ease-out),
-    transform 0.14s var(--ease-out);
+.preset-caret {
+  opacity: 0.7;
+  transition: transform 0.16s var(--ease-out);
 }
-.preset-tab:active {
-  transform: scale(0.97);
-}
-.preset-tab-active {
-  color: #eef2f7;
-  background: rgba(255, 255, 255, 0.06);
+.preset-menu-open .preset-caret {
+  transform: rotate(180deg);
 }
 @media (hover: hover) and (pointer: fine) {
-  .preset-tab:hover {
-    color: #cbd2dc;
+  .preset-menu:hover {
+    color: #eef2f7;
+    background: rgba(255, 255, 255, 0.055);
   }
+}
+
+/* the catalog — a calm glass card that opens upward from the menu button */
+.preset-popover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  width: min(360px, 80vw);
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 12px;
+  background: rgba(11, 13, 18, 0.86);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  transform-origin: bottom right;
+  animation: preset-pop-in 0.15s var(--ease-out);
+}
+@keyframes preset-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.preset-pop-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.preset-pop-label {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.preset-pop-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .preset-div {
@@ -271,5 +300,11 @@ canvas {
   .chip:active {
     transition: background 0.14s, color 0.14s, border-color 0.14s;
     transform: none;
+  }
+  .preset-popover {
+    animation: none;
+  }
+  .preset-caret {
+    transition: none;
   }
 }

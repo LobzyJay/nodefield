@@ -1,50 +1,42 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store/store'
 import { MATH_PRESETS, SHAPE_PRESETS, SURFACE_PRESETS, type PresetName } from '../store/presets'
 
-// one family of presets shown at a time, switched by the tabs — keeps the bar
-// compact (max one group) however large the shape library grows
-const FAMILIES = [
-  { key: 'shapes', label: 'Shapes', list: SHAPE_PRESETS },
-  { key: 'math', label: 'Math', list: MATH_PRESETS },
-  { key: 'surfaces', label: 'Surfaces', list: SURFACE_PRESETS },
+// the full catalog lives behind one menu — the bar stays just Randomize + the menu
+const SECTIONS = [
+  { label: 'Shapes', list: SHAPE_PRESETS },
+  { label: 'Math', list: MATH_PRESETS },
+  { label: 'Surfaces', list: SURFACE_PRESETS },
 ] as const
-type FamKey = (typeof FAMILIES)[number]['key']
-
-// which family a raw spread belongs to (so the tab follows even on a Custom roll)
-const SHAPE_SPREADS = new Set(['sphere', 'disc', 'cascade', 'helix', 'mobius', 'torus', 'wave'])
-const MATH_SPREADS = new Set(['attractor', 'knot', 'superformula', 'vortex'])
-const SURFACE_SPREADS = new Set(['hyperboloid', 'wormhole', 'pseudosphere', 'horn', 'wavegrid', 'catenoid', 'helicoid'])
-
-function familyOf(preset: PresetName | 'Custom', spread: string): FamKey | null {
-  if (SHAPE_PRESETS.includes(preset as PresetName)) return 'shapes'
-  if (MATH_PRESETS.includes(preset as PresetName)) return 'math'
-  if (SURFACE_PRESETS.includes(preset as PresetName)) return 'surfaces'
-  // Custom: fall back to the visible spread so the right family stays selected
-  if (SHAPE_SPREADS.has(spread)) return 'shapes'
-  if (MATH_SPREADS.has(spread)) return 'math'
-  if (SURFACE_SPREADS.has(spread)) return 'surfaces'
-  return null
-}
 
 export function PresetBar() {
   const active = useStore((s) => s.activePreset)
-  const spread = useStore((s) => s.spread)
   const apply = useStore((s) => s.applyPreset)
   const randomize = useStore((s) => s.randomize)
-  const [tab, setTab] = useState<FamKey>('shapes')
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
 
-  // keep the visible family in sync with what's on screen, so the lit chip (after
-  // ←/→ cycling or applying a preset) or the right family (after a randomize) shows
+  // close the popover on click-outside or Escape
   useEffect(() => {
-    const fam = familyOf(active, spread)
-    if (fam) setTab(fam)
-  }, [active, spread])
+    if (!open) return
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
 
-  const list = FAMILIES.find((f) => f.key === tab)!.list
+  const label = active === 'Custom' ? 'Presets' : active
 
   return (
-    <div className="presetbar">
+    <div className="presetbar" ref={ref}>
       <button className="chip chip-roll" onClick={randomize} title="Randomize — surprise me">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <polyline points="16 3 21 3 21 8" />
@@ -56,29 +48,41 @@ export function PresetBar() {
         Randomize
       </button>
       <span className="preset-div" />
-      <div className="preset-tabs">
-        {FAMILIES.map((f) => (
-          <button
-            key={f.key}
-            className={'preset-tab' + (tab === f.key ? ' preset-tab-active' : '')}
-            onClick={() => setTab(f.key)}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-      <span className="preset-div" />
-      <div className="preset-group">
-        {list.map((n) => (
-          <button
-            key={n}
-            className={'chip' + (active === n ? ' chip-active' : '')}
-            onClick={() => apply(n)}
-            title={n}
-          >
-            {n}
-          </button>
-        ))}
+      <div className="preset-menu-wrap">
+        <button
+          className={'chip preset-menu' + (open ? ' preset-menu-open' : '')}
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          title="Choose a preset"
+        >
+          {label}
+          <svg className="preset-caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+        {open && (
+          <div className="preset-popover">
+            {SECTIONS.map((sec) => (
+              <div className="preset-pop-section" key={sec.label}>
+                <div className="preset-pop-label">{sec.label}</div>
+                <div className="preset-pop-grid">
+                  {sec.list.map((n: PresetName) => (
+                    <button
+                      key={n}
+                      className={'chip' + (active === n ? ' chip-active' : '')}
+                      onClick={() => {
+                        apply(n)
+                        setOpen(false)
+                      }}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

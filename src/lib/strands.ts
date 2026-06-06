@@ -269,6 +269,206 @@ export function makeVortex(p: FieldParams): Strand[] {
   return strands
 }
 
+// A parametric surface drawn as a wireframe: a grid of u-lines (constant v) and
+// v-lines (constant u). One generic builder takes a surface function f(u,v) and a
+// fixed grid resolution derived from nodeCount, so any two surfaces at the same
+// nodeCount emit identical count / segCount / point ordering — that's what lets
+// catenoid ↔ helicoid (and any same-family pair) morph cleanly.
+type SurfaceFn = (u: number, v: number) => [number, number, number]
+
+function clamp(x: number, lo: number, hi: number) {
+  return Math.max(lo, Math.min(hi, x))
+}
+
+function buildSurface(
+  p: FieldParams,
+  f: SurfaceFn,
+  uRange: [number, number],
+  vRange: [number, number],
+  uClosed: boolean,
+): Strand[] {
+  const rand = mulberry32(p.seed * 2654435761)
+  // FIXED resolution from nodeCount so every surface lines up for morphing
+  const uSteps = clamp(Math.round(p.nodeCount / 14), 36, 64)
+  const vSteps = Math.round(uSteps * 0.6)
+  const [u0, u1] = uRange
+  const [v0, v1] = vRange
+  // u samples: when closed we still sample uSteps distinct points and rely on the
+  // strand's `closed` flag to add the wrap segment (no duplicated endpoint).
+  const uN = uSteps
+  const vN = vSteps
+
+  const allForNorm: number[] = []
+  // collect raw points in a deterministic order: u-lines first, then v-lines
+  type Line = { pts: number[]; closed: boolean; vGrad: number[] }
+  const lines: Line[] = []
+
+  // u-lines: one per v row, varying u. Every u-line emits uN+1 points and stays
+  // closed:false so point/segment counts are IDENTICAL whether u wraps or not — a
+  // closed surface duplicates its first sample (a real closing segment), an open
+  // one duplicates its last sample (a degenerate zero-length final segment). This
+  // parity is what makes catenoid (closed u) ↔ helicoid (open u) morph line up.
+  for (let r = 0; r < vN; r++) {
+    const v = v0 + (vN > 1 ? r / (vN - 1) : 0.5) * (v1 - v0)
+    const vt = vN > 1 ? r / (vN - 1) : 0.5
+    const pts: number[] = []
+    const vGrad: number[] = []
+    let firstX = 0
+    let firstY = 0
+    let firstZ = 0
+    let lastX = 0
+    let lastY = 0
+    let lastZ = 0
+    for (let c = 0; c < uN; c++) {
+      const uu = uClosed ? u0 + (c / uN) * (u1 - u0) : u0 + (c / Math.max(1, uN - 1)) * (u1 - u0)
+      const [x, y, z] = f(uu, v)
+      if (c === 0) {
+        firstX = x
+        firstY = y
+        firstZ = z
+      }
+      lastX = x
+      lastY = y
+      lastZ = z
+      pts.push(x, y, z)
+      allForNorm.push(x, y, z)
+      vGrad.push(vt)
+    }
+    // wrap point: first sample (closed) or last sample (open, degenerate)
+    const wx = uClosed ? firstX : lastX
+    const wy = uClosed ? firstY : lastY
+    const wz = uClosed ? firstZ : lastZ
+    pts.push(wx, wy, wz)
+    allForNorm.push(wx, wy, wz)
+    vGrad.push(vt)
+    lines.push({ pts, closed: false, vGrad })
+  }
+
+  // v-lines: one per u column, varying v
+  for (let c = 0; c < uN; c++) {
+    const u = uClosed ? u0 + (c / uN) * (u1 - u0) : u0 + (c / Math.max(1, uN - 1)) * (u1 - u0)
+    const pts: number[] = []
+    const vGrad: number[] = []
+    for (let r = 0; r < vN; r++) {
+      const v = v0 + (vN > 1 ? r / (vN - 1) : 0.5) * (v1 - v0)
+      const vt = vN > 1 ? r / (vN - 1) : 0.5
+      const [x, y, z] = f(u, v)
+      pts.push(x, y, z)
+      allForNorm.push(x, y, z)
+      vGrad.push(vt)
+    }
+    lines.push({ pts, closed: false, vGrad })
+  }
+
+  normalize(allForNorm, p.radius, 1.5)
+
+  const strands: Strand[] = []
+  let cursor = 0
+  for (const ln of lines) {
+    const k = ln.pts.length / 3
+    const pts: number[] = []
+    for (let j = 0; j < k; j++) {
+      pts.push(allForNorm[cursor], allForNorm[cursor + 1], allForNorm[cursor + 2])
+      cursor += 3
+    }
+    strands.push({ pts, tEach: ln.vGrad, t: 0.5, accent: 0, seed: rand(), closed: ln.closed, dot: 'sparse' })
+  }
+  return strands
+}
+
+const TAU = Math.PI * 2
+
+function sech(x: number) {
+  return 1 / Math.cosh(x)
+}
+
+export function makeSurface(p: FieldParams): Strand[] {
+  switch (p.spread) {
+    case 'hyperboloid':
+      return buildSurface(
+        p,
+        (u, v) => {
+          const r = Math.sqrt(1 + v * v)
+          return [r * Math.cos(u), v, r * Math.sin(u)]
+        },
+        [0, TAU],
+        [-1.4, 1.4],
+        true,
+      )
+    case 'wormhole':
+      return buildSurface(
+        p,
+        (u, v) => {
+          const r = Math.cosh(v)
+          return [r * Math.cos(u), 1.5 * v, r * Math.sin(u)]
+        },
+        [0, TAU],
+        [-1.3, 1.3],
+        true,
+      )
+    case 'pseudosphere':
+      return buildSurface(
+        p,
+        (u, v) => [sech(v) * Math.cos(u), sech(v) * Math.sin(u), v - Math.tanh(v)],
+        [0, TAU],
+        [0, 3],
+        true,
+      )
+    case 'horn':
+      return buildSurface(
+        p,
+        (u, x) => {
+          const rad = 1 / x
+          return [x - 4, rad * Math.cos(u), rad * Math.sin(u)]
+        },
+        [0, TAU],
+        [1, 7],
+        true,
+      )
+    case 'wavegrid': {
+      const rng = mulberry32(p.seed * 1013904223)
+      const phi = rng() * TAU
+      return buildSurface(
+        p,
+        (s, t) => {
+          const z = 0.6 * Math.sin(2.5 * s * Math.PI + phi) * Math.cos(1.7 * t * Math.PI) + 0.25 * Math.sin(4 * t * Math.PI)
+          return [s * 2.2, z, t * 2.2]
+        },
+        [-1, 1],
+        [-1, 1],
+        false,
+      )
+    }
+    case 'catenoid':
+      return buildSurface(
+        p,
+        (u, v) => [Math.cosh(v) * Math.cos(u), v, Math.cosh(v) * Math.sin(u)],
+        [0, TAU],
+        [-1.2, 1.2],
+        true,
+      )
+    case 'helicoid':
+      return buildSurface(
+        p,
+        (u, v) => [v * Math.cos(u), 0.55 * u, v * Math.sin(u)],
+        [0, 2.2 * TAU],
+        [-1.4, 1.4],
+        false,
+      )
+    default:
+      return buildSurface(
+        p,
+        (u, v) => {
+          const r = Math.sqrt(1 + v * v)
+          return [r * Math.cos(u), v, r * Math.sin(u)]
+        },
+        [0, TAU],
+        [-1.4, 1.4],
+        true,
+      )
+  }
+}
+
 export function makeKnot(p: FieldParams): Strand[] {
   const rand = mulberry32(p.seed * 2654435761)
   const pp = Math.max(1, Math.round(p.knotP))

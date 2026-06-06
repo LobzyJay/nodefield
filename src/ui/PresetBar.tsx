@@ -1,5 +1,5 @@
 import { useStore } from '../store/store'
-import { MATH_PRESETS, SHAPE_PRESETS, type PresetName } from '../store/presets'
+import { MATH_PRESETS, SHAPE_PRESETS, SURFACE_PRESETS, type PresetName } from '../store/presets'
 
 // shapes on the left, math fields on the right (divider between)
 export function PresetBar() {
@@ -22,6 +22,8 @@ export function PresetBar() {
       <div className="preset-group">{SHAPE_PRESETS.map(chip)}</div>
       <span className="preset-div" />
       <div className="preset-group">{MATH_PRESETS.map(chip)}</div>
+      <span className="preset-div" />
+      <div className="preset-group">{SURFACE_PRESETS.map(chip)}</div>
     </div>
   )
 }

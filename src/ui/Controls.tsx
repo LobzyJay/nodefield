@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { button, folder, useControls } from 'leva'
 import { useStore } from '../store/store'
 import { DEFAULT_PARAMS } from '../store/presets'
-import { RADIAL } from '../lib/geometry'
+import { RADIAL, SURFACES } from '../lib/geometry'
 import type { Params } from '../store/types'
 import { downloadRaster, downloadSVG } from '../lib/export'
 
@@ -67,6 +67,13 @@ export function Controls() {
             'torus knot': 'knot',
             superformula: 'superformula',
             'vortex dipole': 'vortex',
+            wormhole: 'wormhole',
+            hyperboloid: 'hyperboloid',
+            pseudosphere: 'pseudosphere',
+            horn: 'horn',
+            wavegrid: 'wavegrid',
+            catenoid: 'catenoid',
+            helicoid: 'helicoid',
           },
           label: 'shape',
           onChange: mk('spread'),
@@ -135,9 +142,11 @@ export function Controls() {
             mobius: 'mobius',
             torus: 'torus',
             superformula: 'superformula',
+            catenoid: 'catenoid',
+            helicoid: 'helicoid',
           },
           onChange: mk('morphTo'),
-          render: (get) => RADIAL.has(sp(get)),
+          render: (get) => RADIAL.has(sp(get)) || SURFACES.has(sp(get)),
         },
         morph: {
           value: P.morph,
@@ -146,7 +155,7 @@ export function Controls() {
           step: 0.01,
           label: 'morph',
           onChange: mk('morph'),
-          render: (get) => RADIAL.has(sp(get)) && get('Math.morphTo') !== 'off',
+          render: (get) => (RADIAL.has(sp(get)) || SURFACES.has(sp(get))) && get('Math.morphTo') !== 'off',
         },
       },
       { collapsed: true },

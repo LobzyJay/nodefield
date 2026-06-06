@@ -32,6 +32,8 @@ export function Scene() {
       waveForm: s.waveForm,
       seed: s.seed,
       divergenceAngle: (s.divergenceAngle * Math.PI) / 180,
+      waveFreq: s.waveFreq,
+      waveTwist: s.waveTwist,
       attractor: s.attractor,
       knotP: s.knotP,
       knotQ: s.knotQ,

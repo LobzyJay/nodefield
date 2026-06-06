@@ -50,6 +50,8 @@ export interface FieldParams {
   waveForm: WaveForm
   // math params
   divergenceAngle: number // radians, phyllotaxis angle (default golden)
+  waveFreq: number // wave fold/ripple density multiplier
+  waveTwist: number // wave spiral-into-ribbon twist
   attractor: AttractorType
   knotP: number
   knotQ: number
@@ -216,6 +218,8 @@ function buildWave(p: FieldParams): FieldData {
   const depthAmp = p.radius * 0.5 * (0.45 + p.curl)
   const yAmp = p.radius * 0.16
   const form = p.waveForm
+  const freq = p.waveFreq // multiplies each form's fold/ripple frequency
+  const twist = p.waveTwist // extra spiral applied to every form (curtain -> drape ribbon)
 
   const prev = new Vector3()
   const cur = new Vector3()
@@ -246,7 +250,7 @@ function buildWave(p: FieldParams): FieldData {
       if (form === 'drape') {
         // a folding sheet that sags + narrows + twists into a ribbon as it falls
         const widthFactor = 1 - 0.45 * smoothstep01(0.45, 1.0, vRow)
-        const foldFreq = 2 + vRow * 3
+        const foldFreq = (2 + vRow * 3) * freq
         const foldAmp = depthAmp * (0.3 + vRow * 1.15)
         const x0 = (u - 0.5) * width * widthFactor
         const z0 = Math.sin(u * Math.PI * foldFreq + seedPhase + vRow * 6) * foldAmp
@@ -267,26 +271,36 @@ function buildWave(p: FieldParams): FieldData {
         px = Math.cos(ang) * rr
         py = Math.sin(ang) * rr
         pz =
-          (Math.sin(rr * 7 - seedPhase) * 0.6 + Math.sin(rr * 13 + seedPhase) * 0.3) *
+          (Math.sin(rr * 7 * freq - seedPhase) * 0.6 + Math.sin(rr * 13 * freq + seedPhase) * 0.3) *
           depthAmp *
           (0.35 + vRow * 0.5)
       } else if (form === 'flag') {
         // a banner waving from its left edge; amplitude grows toward the free edge
         const a = 0.15 + u * 0.95
         px = (u - 0.5) * width
-        pz = Math.sin(u * Math.PI * 2.6 - seedPhase + vRow * 1.6) * depthAmp * a
+        pz = Math.sin(u * Math.PI * 2.6 * freq - seedPhase + vRow * 1.6) * depthAmp * a
         py =
           (0.5 - vRow) * height +
-          Math.sin(u * Math.PI * 2.6 - seedPhase + vRow * 1.6) * p.radius * 0.1 * a
+          Math.sin(u * Math.PI * 2.6 * freq - seedPhase + vRow * 1.6) * p.radius * 0.1 * a
       } else {
         // curtain: flat vertical sheet with a gentle depth ripple
         px = (u - 0.5) * width
-        py = (0.5 - vRow) * height + Math.sin(u * Math.PI * 2 + seedPhase + rowPhase) * yAmp
+        py = (0.5 - vRow) * height + Math.sin(u * Math.PI * 2 * freq + seedPhase + rowPhase) * yAmp
         pz =
-          (Math.sin(u * Math.PI * 3 + seedPhase + vRow * 4) * 0.6 +
-            Math.sin(u * Math.PI * 2 + seedPhase * 1.6 + vRow * 2) * 0.3 +
+          (Math.sin(u * Math.PI * 3 * freq + seedPhase + vRow * 4) * 0.6 +
+            Math.sin(u * Math.PI * 2 * freq + seedPhase * 1.6 + vRow * 2) * 0.3 +
             valueNoise(u * 2.2 + r * 0.3, seedPhase, vRow * 3) * 0.25) *
           depthAmp
+      }
+      // extra spiral twist (per-row, grows toward the bottom) — turns a flat sheet
+      // into a folding ribbon, on top of whatever the form already does
+      if (twist !== 0) {
+        const th = vRow * vRow * Math.PI * twist
+        const cth2 = Math.cos(th)
+        const sth2 = Math.sin(th)
+        const nx = px * cth2 - pz * sth2
+        pz = px * sth2 + pz * cth2
+        px = nx
       }
       cur.set(px + rjx, py + rjy, pz)
 

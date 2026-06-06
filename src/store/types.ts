@@ -24,6 +24,8 @@ export interface Params {
   seed: number
   // Math (expensive — rebuild geometry)
   divergenceAngle: number // degrees in the UI, radians in the field; phyllotaxis angle
+  waveFreq: number // wave: fold/ripple density multiplier
+  waveTwist: number // wave: spiral-into-ribbon twist (0 = flat sheet)
   attractor: AttractorType
   knotP: number
   knotQ: number
@@ -82,6 +84,8 @@ export const STRUCTURE_KEYS: (keyof Params)[] = [
   'waveForm',
   'seed',
   'divergenceAngle',
+  'waveFreq',
+  'waveTwist',
   'attractor',
   'knotP',
   'knotQ',

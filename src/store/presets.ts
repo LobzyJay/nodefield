@@ -11,6 +11,8 @@ export const DEFAULT_PARAMS: Params = {
   seed: 1,
   // Math
   divergenceAngle: 137.50776, // degrees (the golden angle)
+  waveFreq: 1,
+  waveTwist: 0,
   attractor: 'lorenz',
   knotP: 3,
   knotQ: 2,

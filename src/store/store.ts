@@ -166,7 +166,11 @@ export const useStore = create<StoreState>((setState, getState) => {
         morphTo: 'off',
         morph: 0,
       }
-      if (shape === 'wave') patch.waveForm = pick(['curtain', 'drape', 'ripple', 'flag']) as Params['waveForm']
+      if (shape === 'wave') {
+        patch.waveForm = pick(['curtain', 'drape', 'ripple', 'flag']) as Params['waveForm']
+        patch.waveFreq = rng(0.5, 2)
+        patch.waveTwist = r() < 0.5 ? rng(0, 1.2) : 0
+      }
       if (shape === 'knot') {
         patch.knotP = 2 + Math.floor(r() * 6)
         patch.knotQ = 1 + Math.floor(r() * 5)

@@ -58,8 +58,6 @@ export const DEFAULT_PARAMS: Params = {
 export type PresetName =
   | 'Nucleus'
   | 'Wave'
-  | 'Drape'
-  | 'Cascade'
   | 'Helix'
   | 'Möbius'
   | 'Torus'
@@ -69,17 +67,15 @@ export type PresetName =
   | 'Knot'
   | 'Vortex'
   | 'Wormhole'
-  | 'Hyperboloid'
-  | 'Pseudosphere'
   | 'Horn'
   | 'Wavegrid'
   | 'Catenoid'
   | 'Helicoid'
 
 // the three preset families (single source of truth for the bar + the cycle order)
-export const SHAPE_PRESETS: PresetName[] = ['Nucleus', 'Wave', 'Drape', 'Cascade', 'Helix', 'Möbius', 'Torus', 'Disc']
+export const SHAPE_PRESETS: PresetName[] = ['Nucleus', 'Wave', 'Helix', 'Möbius', 'Torus', 'Disc']
 export const MATH_PRESETS: PresetName[] = ['Lorenz', 'Superform', 'Knot', 'Vortex']
-export const SURFACE_PRESETS: PresetName[] = ['Wormhole', 'Hyperboloid', 'Pseudosphere', 'Horn', 'Wavegrid', 'Catenoid', 'Helicoid']
+export const SURFACE_PRESETS: PresetName[] = ['Wormhole', 'Horn', 'Wavegrid', 'Catenoid', 'Helicoid']
 export const PRESET_ORDER: PresetName[] = [...SHAPE_PRESETS, ...MATH_PRESETS, ...SURFACE_PRESETS]
 
 export const PRESETS: Record<PresetName, Partial<Params>> = {
@@ -120,45 +116,6 @@ export const PRESETS: Record<PresetName, Partial<Params>> = {
     decimals: 3,
     pulseSpeed: 0.5,
     orbitSpeed: 0.0,
-  },
-  // a folding, cascading sheet that drapes + twists into a ribbon (the reference)
-  Drape: {
-    spread: 'wave',
-    waveForm: 'drape',
-    colorMode: 'spectrum',
-    accent: '#4C7CFF',
-    nodeCount: 1000,
-    radius: 3.1,
-    jitter: 0.16,
-    curl: 0,
-    coreOn: false,
-    thickness: 3.0,
-    bloomIntensity: 1.35,
-    bloomThreshold: 0.09,
-    halftone: false,
-    emission: 2.35,
-    density: 0.16,
-    decimals: 3,
-    pulseSpeed: 0.4,
-    orbitSpeed: 0.012,
-  },
-  // draping funnel cascade (recreates the waterfall reference frame)
-  Cascade: {
-    spread: 'cascade',
-    colorMode: 'spectrum',
-    accent: '#FF5C7A',
-    nodeCount: 540,
-    radius: 3.0,
-    jitter: 0.3,
-    curl: 0,
-    thickness: 1.4,
-    bloomIntensity: 1.3,
-    bloomThreshold: 0.18,
-    halftone: false,
-    emission: 1.5,
-    density: 0.24,
-    decimals: 3,
-    pulseSpeed: 0.4,
   },
   // double helix (DNA)
   Helix: {
@@ -317,44 +274,6 @@ export const PRESETS: Record<PresetName, Partial<Params>> = {
     curl: 0,
     coreOn: false,
     thickness: 1.3,
-    glass: 0.4,
-    bloomIntensity: 1.35,
-    bloomThreshold: 0.14,
-    emission: 1.6,
-    density: 0.1,
-    dataMode: 'parameter',
-    decimals: 3,
-    orbitSpeed: 0.05,
-  },
-  // one-sheet hyperboloid — a ruled surface from straight lines
-  Hyperboloid: {
-    spread: 'hyperboloid',
-    colorMode: 'spectrum',
-    accent: '#35E0C8',
-    nodeCount: 760,
-    radius: 3.2,
-    curl: 0,
-    coreOn: false,
-    thickness: 1.2,
-    glass: 0.4,
-    bloomIntensity: 1.35,
-    bloomThreshold: 0.14,
-    emission: 1.6,
-    density: 0.1,
-    dataMode: 'parameter',
-    decimals: 3,
-    orbitSpeed: 0.05,
-  },
-  // pseudosphere (tractricoid) — a model of hyperbolic geometry
-  Pseudosphere: {
-    spread: 'pseudosphere',
-    colorMode: 'spectrum',
-    accent: '#7B3FE4',
-    nodeCount: 720,
-    radius: 3.2,
-    curl: 0,
-    coreOn: false,
-    thickness: 1.2,
     glass: 0.4,
     bloomIntensity: 1.35,
     bloomThreshold: 0.14,

@@ -1,6 +1,6 @@
 import { Vector3 } from 'three'
 import { mulberry32, valueNoise } from './rng'
-import { buildStrands, makeAttractor, makeKnot } from './strands'
+import { buildStrands, makeAttractor, makeKnot, makeVortex } from './strands'
 
 export type SpreadMode =
   | 'sphere'
@@ -13,6 +13,7 @@ export type SpreadMode =
   | 'attractor'
   | 'knot'
   | 'superformula'
+  | 'vortex'
 
 export type WaveForm = 'curtain' | 'drape' | 'ripple' | 'flag'
 
@@ -334,6 +335,7 @@ export function buildField(p: FieldParams): FieldData {
   // curve-based math objects are built from polylines via the shared strand builder
   if (p.spread === 'attractor') return buildStrands(makeAttractor(p), p.radius)
   if (p.spread === 'knot') return buildStrands(makeKnot(p), p.radius)
+  if (p.spread === 'vortex') return buildStrands(makeVortex(p), p.radius)
 
   const n = Math.max(1, Math.floor(p.nodeCount))
   const P = p.curl > 0.001 ? 22 : 2 // points per fiber (dense enough for smooth curls)

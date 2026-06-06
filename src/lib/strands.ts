@@ -212,6 +212,63 @@ export function makeAttractor(p: FieldParams): Strand[] {
   return strands
 }
 
+// Vortex dipole: two counter-rotating spiral arms (180-degree symmetric) sweeping
+// out of a central pinch — the blue/red split is colour-by-arm. Each fibre is a
+// logarithmic spiral; a fan of them per arm gives the swept lobe.
+export function makeVortex(p: FieldParams): Strand[] {
+  const rand = mulberry32(p.seed * 2654435761)
+  const perArm = Math.min(180, Math.max(45, Math.floor(p.nodeCount / 4)))
+  const steps = 84
+  const curl = 0.9 + p.curl * 1.1 // base spiral bend; the curl slider tightens it
+  const fan = 1.7 // angular spread of each arm's fan (radians)
+  const reach = p.radius * 1.6
+
+  const strands: Strand[] = []
+  const allForNorm: number[] = []
+  const meta: { k: number; arm: number; u: number }[] = []
+
+  for (let arm = 0; arm < 2; arm++) {
+    const armAng = arm * Math.PI + Math.PI * 0.5 // up / down spine
+    for (let j = 0; j < perArm; j++) {
+      const u = perArm > 1 ? j / (perArm - 1) : 0.5
+      const off = (u - 0.5) * fan + (rand() - 0.5) * 0.06 // fibre's offset across the fan
+      const wind = curl * (0.25 + u * 0.9) * (0.94 + rand() * 0.12) // inner ~straight, outer curl -> comma
+      const len = reach * (0.45 + 0.55 * Math.sin(u * Math.PI)) * (0.88 + rand() * 0.24) // lobed tips
+      const rPhase = rand() * 0.05 // stagger start radius so fibres don't band into arcs
+      const jit = (rand() - 0.5) * 0.04
+      let k = 0
+      for (let s = 0; s < steps; s++) {
+        const t = s / (steps - 1)
+        // a ray out of the pinch that bends one way (all curl same sign -> comma swirl)
+        const ang = armAng + off + Math.pow(t, 1.25) * wind + jit
+        const r = (0.04 + rPhase) * reach + Math.pow(t, 1.18) * len
+        const x = Math.cos(ang) * r
+        const y = Math.sin(ang) * r
+        const z = (rand() - 0.5) * 0.08 // keep it near-planar like the reference
+        allForNorm.push(x, y, z)
+        k++
+      }
+      meta.push({ k, arm, u })
+    }
+  }
+  normalize(allForNorm, p.radius, 1.5)
+
+  let cursor = 0
+  for (const m of meta) {
+    const pts: number[] = []
+    const tEach: number[] = []
+    // arm 0 -> cool (blue), arm 1 -> warm (red); slight gradient along the fibre
+    const base = m.arm === 0 ? 0.72 : 0.05
+    for (let j = 0; j < m.k; j++) {
+      pts.push(allForNorm[cursor], allForNorm[cursor + 1], allForNorm[cursor + 2])
+      tEach.push(base + (m.k > 1 ? (j / (m.k - 1)) * 0.16 : 0))
+      cursor += 3
+    }
+    strands.push({ pts, tEach, t: 0.5, accent: 0, seed: rand(), closed: false, dot: 'sparse' })
+  }
+  return strands
+}
+
 export function makeKnot(p: FieldParams): Strand[] {
   const rand = mulberry32(p.seed * 2654435761)
   const pp = Math.max(1, Math.round(p.knotP))

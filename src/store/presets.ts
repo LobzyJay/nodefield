@@ -67,10 +67,11 @@ export type PresetName =
   | 'Lorenz'
   | 'Superform'
   | 'Knot'
+  | 'Vortex'
 
 // the two preset families (single source of truth for the bar + the cycle order)
 export const SHAPE_PRESETS: PresetName[] = ['Nucleus', 'Wave', 'Drape', 'Cascade', 'Helix', 'Möbius', 'Torus', 'Disc']
-export const MATH_PRESETS: PresetName[] = ['Lorenz', 'Superform', 'Knot']
+export const MATH_PRESETS: PresetName[] = ['Lorenz', 'Superform', 'Knot', 'Vortex']
 export const PRESET_ORDER: PresetName[] = [...SHAPE_PRESETS, ...MATH_PRESETS]
 
 export const PRESETS: Record<PresetName, Partial<Params>> = {
@@ -279,5 +280,23 @@ export const PRESETS: Record<PresetName, Partial<Params>> = {
     dataMode: 'parameter',
     decimals: 3,
     orbitSpeed: 0.06,
+  },
+  // vortex dipole — two counter-rotating swirls, blue/red split (flow field)
+  Vortex: {
+    spread: 'vortex',
+    colorMode: 'spectrum',
+    accent: '#4C7CFF',
+    nodeCount: 760,
+    radius: 3.3,
+    curl: 0,
+    thickness: 1.5,
+    glass: 0.4,
+    bloomIntensity: 1.45,
+    bloomThreshold: 0.12,
+    emission: 1.7,
+    density: 0.12,
+    dataMode: 'parameter',
+    decimals: 3,
+    orbitSpeed: 0.0,
   },
 }

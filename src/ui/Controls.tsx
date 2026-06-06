@@ -66,6 +66,7 @@ export function Controls() {
             'attractor (strange)': 'attractor',
             'torus knot': 'knot',
             superformula: 'superformula',
+            'vortex dipole': 'vortex',
           },
           label: 'shape',
           onChange: mk('spread'),

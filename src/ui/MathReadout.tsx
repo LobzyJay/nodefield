@@ -60,6 +60,11 @@ function baseReadout(s: Params): { title: string; lines: string[] } {
       return { title: 'spiral cascade', lines: ['rᵢ = R·layer,  θ = i·Φ + layer·6π', `Φ = ${ga}°`] }
     case 'wave':
       return { title: `wave · ${s.waveForm}`, lines: ['z = Σ sin(αu + φ)', 'flowing ribbons'] }
+    case 'vortex':
+      return {
+        title: 'vortex dipole',
+        lines: ['v = Σ Γₙ (r−rₙ)⊥ / |r−rₙ|²', 'two counter-rotating swirls'],
+      }
     default:
       return { title: String(s.spread), lines: [] }
   }

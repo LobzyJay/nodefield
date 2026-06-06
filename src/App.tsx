@@ -129,9 +129,10 @@ function HudMeta() {
   const preset = useStore((s) => s.activePreset)
   const spread = useStore((s) => s.spread)
   const nodes = useStore((s) => s.nodeCount)
+  const seed = useStore((s) => s.seed)
   return (
     <div className="meta">
-      {preset === 'Custom' ? 'custom' : preset} · {spread} · {nodes}
+      {preset === 'Custom' ? 'custom' : preset} · {spread} · {nodes} · seed {seed}
     </div>
   )
 }

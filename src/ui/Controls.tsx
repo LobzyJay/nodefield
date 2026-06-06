@@ -46,6 +46,60 @@ function mk<K extends keyof Params>(key: K) {
   }
 }
 
+// Mirror the full store into Leva (suppressed so the echo onChanges don't flip to
+// "Custom"). Shared by the preset-apply sync and the randomize/programmatic sync.
+function pushStoreToLeva(set: (o: Record<string, unknown>) => void): () => void {
+  const s = useStore.getState()
+  const end = suppressWindow(150)
+  set({
+    nodeCount: s.nodeCount,
+    radius: s.radius,
+    jitter: s.jitter,
+    curl: s.curl,
+    spread: s.spread,
+    waveForm: s.waveForm,
+    divergenceAngle: s.divergenceAngle,
+    attractor: s.attractor,
+    knotP: s.knotP,
+    knotQ: s.knotQ,
+    superM: s.superM,
+    superN1: s.superN1,
+    superN2: s.superN2,
+    morphTo: s.morphTo,
+    morph: s.morph,
+    seed: s.seed,
+    colorMode: s.colorMode,
+    accent: s.accent,
+    coreOn: s.coreOn,
+    emission: s.emission,
+    thickness: s.thickness,
+    glass: s.glass,
+    coreSize: s.coreSize,
+    dotSize: s.dotSize,
+    bloomIntensity: s.bloomIntensity,
+    bloomThreshold: s.bloomThreshold,
+    grain: s.grain,
+    vignette: s.vignette,
+    atmosphere: s.atmosphere,
+    halftone: s.halftone,
+    numbersOn: s.numbersOn,
+    numberFormat: s.numberFormat,
+    dataMode: s.dataMode,
+    mathReadout: s.mathReadout,
+    density: s.density,
+    decimals: s.decimals,
+    flicker: s.flicker,
+    focusOn: s.focusOn,
+    orbitSpeed: s.orbitSpeed,
+    pulseSpeed: s.pulseSpeed,
+    phase: s.phase,
+    intro: s.intro,
+    drawIn: s.drawIn,
+    frame: s.frame,
+  })
+  return end
+}
+
 export function Controls() {
   const P = useStore.getState()
   const activePreset = useStore((s) => s.activePreset)
@@ -244,7 +298,7 @@ export function Controls() {
     ),
     Config: folder(
       {
-        'copy config URL': button(() => {
+        'copy look link': button(() => {
           navigator.clipboard?.writeText(location.href)
         }),
         reseed: button(() => useStore.getState().reseed()),
@@ -254,61 +308,19 @@ export function Controls() {
     ),
   }))
 
-  // Push store -> Leva when a preset/bulk change happens (keeps panel in sync).
+  // Push store -> Leva on a preset/bulk change so the panel stays in sync.
   useEffect(() => {
     if (activePreset === 'Custom') return
-    const s = useStore.getState()
-    const end = suppressWindow(150)
-    set({
-      nodeCount: s.nodeCount,
-      radius: s.radius,
-      jitter: s.jitter,
-      curl: s.curl,
-      spread: s.spread,
-      waveForm: s.waveForm,
-      divergenceAngle: s.divergenceAngle,
-      attractor: s.attractor,
-      knotP: s.knotP,
-      knotQ: s.knotQ,
-      superM: s.superM,
-      superN1: s.superN1,
-      superN2: s.superN2,
-      morphTo: s.morphTo,
-      morph: s.morph,
-      seed: s.seed,
-      colorMode: s.colorMode,
-      accent: s.accent,
-      coreOn: s.coreOn,
-      emission: s.emission,
-      thickness: s.thickness,
-      glass: s.glass,
-      coreSize: s.coreSize,
-      dotSize: s.dotSize,
-      bloomIntensity: s.bloomIntensity,
-      bloomThreshold: s.bloomThreshold,
-      grain: s.grain,
-      vignette: s.vignette,
-      atmosphere: s.atmosphere,
-      halftone: s.halftone,
-      numbersOn: s.numbersOn,
-      numberFormat: s.numberFormat,
-      dataMode: s.dataMode,
-      mathReadout: s.mathReadout,
-      density: s.density,
-      decimals: s.decimals,
-      flicker: s.flicker,
-      focusOn: s.focusOn,
-      orbitSpeed: s.orbitSpeed,
-      pulseSpeed: s.pulseSpeed,
-      phase: s.phase,
-      intro: s.intro,
-      drawIn: s.drawIn,
-      frame: s.frame,
-    } as any)
-    // release after Leva has processed the programmatic set() AND any onChange
-    // fired by controls mounting/unmounting from contextual render()
-    return end
+    return pushStoreToLeva(set as (o: Record<string, unknown>) => void)
   }, [activePreset, set])
+
+  // Randomize (and any programmatic roll) bumps uiSyncId — re-sync the panel even
+  // though activePreset is 'Custom', so the controls reflect the rolled values.
+  const uiSyncId = useStore((s) => s.uiSyncId)
+  useEffect(() => {
+    if (uiSyncId === 0) return
+    return pushStoreToLeva(set as (o: Record<string, unknown>) => void)
+  }, [uiSyncId, set])
 
   // a morph entrance drives morphTo behind the scenes (prev shape -> 'off');
   // mirror it back so the panel's "morph to" never shows a stale transient

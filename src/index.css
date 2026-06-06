@@ -20,6 +20,9 @@
   --muted: #565e6b;
   --accent: #5b8cff;
   --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  /* strong custom curves — the built-in CSS easings are too weak */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 html,
@@ -156,21 +159,45 @@ canvas {
   cursor: pointer;
   white-space: nowrap;
   transition:
-    background 0.14s ease,
-    color 0.14s ease,
-    border-color 0.14s ease;
+    background 0.14s var(--ease-out),
+    color 0.14s var(--ease-out),
+    border-color 0.14s var(--ease-out),
+    transform 0.14s var(--ease-out);
 }
-.chip:hover {
-  color: #eef2f7;
-  background: rgba(255, 255, 255, 0.055);
+/* gate hover behind real pointers so a tap doesn't leave a stuck hover state */
+@media (hover: hover) and (pointer: fine) {
+  .chip:hover {
+    color: #eef2f7;
+    background: rgba(255, 255, 255, 0.055);
+  }
 }
+/* physical press feedback — the UI confirms it heard the click */
 .chip:active {
-  transform: translateY(1px);
+  transform: scale(0.97);
 }
 .chip-active {
   color: #eef2f7;
   background: rgba(91, 140, 255, 0.16);
   border-color: rgba(91, 140, 255, 0.5);
+}
+
+/* the Randomize pill — icon + label, the instrument's "surprise me" verb */
+.chip-roll {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #cbd2dc;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.chip-roll svg {
+  opacity: 0.85;
+}
+@media (hover: hover) and (pointer: fine) {
+  .chip-roll:hover {
+    color: #eef2f7;
+    background: rgba(91, 140, 255, 0.14);
+    border-color: rgba(91, 140, 255, 0.4);
+  }
 }
 
 /* live math readout, bottom-left above the hint */
@@ -197,4 +224,17 @@ canvas {
   font-size: 11px;
   line-height: 1.5;
   letter-spacing: 0.02em;
+}
+
+/* reduced motion: drop the looping pulse and the press/transition movement;
+   keep colour/opacity changes that aid comprehension */
+@media (prefers-reduced-motion: reduce) {
+  .overlay .brand .dot {
+    animation: none;
+  }
+  .chip,
+  .chip:active {
+    transition: background 0.14s, color 0.14s, border-color 0.14s;
+    transform: none;
+  }
 }

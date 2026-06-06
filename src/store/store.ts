@@ -9,16 +9,27 @@ interface StoreState extends Params {
   lutVersion: number // bump -> rebuild color LUT (instant)
   introMorphId: number // bump -> Scene plays a shape->shape morph entrance
   growReplayId: number // bump -> Scene replays the assembly draw-in
+  uiSyncId: number // bump -> Leva panel re-syncs to the store (randomize/programmatic)
   activePreset: PresetName | 'Custom'
   set: <K extends keyof Params>(key: K, value: Params[K]) => void
   applyPreset: (name: PresetName) => void
   bulkSet: (patch: Partial<Params>) => void
   replayGrow: () => void
   reseed: () => void
+  randomize: () => void
 }
 
 const STRUCTURE = new Set<string>(STRUCTURE_KEYS as string[])
 const LUT = new Set<string>(LUT_KEYS as string[])
+
+// Randomize draws from curated, on-brand pools so every roll already looks like
+// Nodefield (the generative-craft "defaults are on-brand" rule).
+const RANDOM_SHAPES = [
+  'sphere', 'disc', 'helix', 'mobius', 'torus', 'wave', 'cascade', 'superformula',
+  'knot', 'vortex', 'attractor', 'wormhole', 'hyperboloid', 'pseudosphere', 'horn',
+  'wavegrid', 'catenoid', 'helicoid',
+]
+const RANDOM_ACCENTS = ['#FD607B', '#4C7CFF', '#35E0C8', '#7B3FE4', '#E1101A', '#E8702A', '#FF5C7A', '#A8E10C']
 
 // ---- URL hash persistence ----
 function encodeHash(p: Params): string {
@@ -51,11 +62,14 @@ export const useStore = create<StoreState>((setState, getState) => {
         lutVersion,
         introMorphId,
         growReplayId,
+        uiSyncId,
         activePreset,
         set,
         applyPreset,
         bulkSet,
         replayGrow,
+        reseed,
+        randomize,
         ...params
       } = getState()
       history.replaceState(null, '', '#' + encodeHash(params as Params))
@@ -75,6 +89,7 @@ export const useStore = create<StoreState>((setState, getState) => {
     lutVersion: 0,
     introMorphId: 0,
     growReplayId: 0,
+    uiSyncId: 0,
     activePreset: 'Nucleus',
 
     set: (key, value) => {
@@ -126,6 +141,51 @@ export const useStore = create<StoreState>((setState, getState) => {
     reseed: () => {
       // a genuine reseed — full 1..999 range, not a deterministic walk
       getState().set('seed', 1 + Math.floor(Math.random() * 999))
+    },
+
+    // "surprise me" — roll a whole new on-brand field in one click. Result is
+    // fully captured by the URL hash, so any roll is shareable / recoverable.
+    randomize: () => {
+      const r = Math.random
+      const pick = <T>(a: T[]): T => a[Math.floor(r() * a.length)]
+      const rng = (lo: number, hi: number) => +(lo + r() * (hi - lo)).toFixed(2)
+      const shape = pick(RANDOM_SHAPES) as Params['spread']
+      const patch: Partial<Params> = {
+        spread: shape,
+        colorMode: pick(['spectrum', 'spectrum', 'spectrum', 'nature', 'single']) as Params['colorMode'],
+        accent: pick(RANDOM_ACCENTS),
+        seed: 1 + Math.floor(r() * 999),
+        nodeCount: Math.round(rng(440, 900)),
+        emission: rng(1.3, 2.1),
+        bloomIntensity: rng(1.2, 1.6),
+        thickness: rng(1.1, 2.4),
+        glass: rng(0.3, 0.8),
+        atmosphere: rng(0.5, 0.85),
+        curl: r() < 0.25 ? rng(0.1, 0.5) : 0,
+        coreOn: false,
+        morphTo: 'off',
+        morph: 0,
+      }
+      if (shape === 'wave') patch.waveForm = pick(['curtain', 'drape', 'ripple', 'flag']) as Params['waveForm']
+      if (shape === 'knot') {
+        patch.knotP = 2 + Math.floor(r() * 6)
+        patch.knotQ = 1 + Math.floor(r() * 5)
+      }
+      if (shape === 'attractor') {
+        patch.attractor = pick(['lorenz', 'aizawa', 'thomas', 'halvorsen', 'dadras']) as Params['attractor']
+      }
+      if (shape === 'superformula') {
+        patch.superM = 2 + Math.floor(r() * 12)
+        patch.superN1 = rng(0.2, 2)
+        patch.superN2 = rng(0.4, 3)
+      }
+      setState({ ...patch, activePreset: 'Custom' } as Partial<StoreState>)
+      setState((s) => ({
+        structureVersion: s.structureVersion + 1,
+        lutVersion: s.lutVersion + 1,
+        uiSyncId: s.uiSyncId + 1,
+      }))
+      scheduleHash()
     },
   }
 })

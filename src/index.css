@@ -140,6 +140,41 @@ canvas {
   gap: 4px;
 }
 
+/* family switcher — reads as a quiet segmented control, not preset chips */
+.preset-tabs {
+  display: flex;
+  gap: 2px;
+  flex: none;
+}
+.preset-tab {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: #79828f;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color 0.14s var(--ease-out),
+    background 0.14s var(--ease-out),
+    transform 0.14s var(--ease-out);
+}
+.preset-tab:active {
+  transform: scale(0.97);
+}
+.preset-tab-active {
+  color: #eef2f7;
+  background: rgba(255, 255, 255, 0.06);
+}
+@media (hover: hover) and (pointer: fine) {
+  .preset-tab:hover {
+    color: #cbd2dc;
+  }
+}
+
 .preset-div {
   width: 1px;
   height: 18px;

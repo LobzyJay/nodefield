@@ -60,6 +60,8 @@ export const DEFAULT_PARAMS: Params = {
 export type PresetName =
   | 'Nucleus'
   | 'Wave'
+  | 'Drape'
+  | 'Cascade'
   | 'Helix'
   | 'Möbius'
   | 'Torus'
@@ -67,18 +69,11 @@ export type PresetName =
   | 'Lorenz'
   | 'Superform'
   | 'Knot'
-  | 'Vortex'
-  | 'Wormhole'
-  | 'Horn'
-  | 'Wavegrid'
-  | 'Catenoid'
-  | 'Helicoid'
 
-// the three preset families (single source of truth for the bar + the cycle order)
-export const SHAPE_PRESETS: PresetName[] = ['Nucleus', 'Wave', 'Helix', 'Möbius', 'Torus', 'Disc']
-export const MATH_PRESETS: PresetName[] = ['Lorenz', 'Superform', 'Knot', 'Vortex']
-export const SURFACE_PRESETS: PresetName[] = ['Wormhole', 'Horn', 'Wavegrid', 'Catenoid', 'Helicoid']
-export const PRESET_ORDER: PresetName[] = [...SHAPE_PRESETS, ...MATH_PRESETS, ...SURFACE_PRESETS]
+// the two preset families (single source of truth for the menu + the cycle order)
+export const SHAPE_PRESETS: PresetName[] = ['Nucleus', 'Wave', 'Drape', 'Cascade', 'Helix', 'Möbius', 'Torus', 'Disc']
+export const MATH_PRESETS: PresetName[] = ['Lorenz', 'Superform', 'Knot']
+export const PRESET_ORDER: PresetName[] = [...SHAPE_PRESETS, ...MATH_PRESETS]
 
 export const PRESETS: Record<PresetName, Partial<Params>> = {
   // sphere burst, cool spectrum — the hero (recreates the Gray Matter frames)
@@ -118,6 +113,45 @@ export const PRESETS: Record<PresetName, Partial<Params>> = {
     decimals: 3,
     pulseSpeed: 0.5,
     orbitSpeed: 0.0,
+  },
+  // a folding, cascading sheet that drapes + twists into a ribbon (the reference)
+  Drape: {
+    spread: 'wave',
+    waveForm: 'drape',
+    colorMode: 'spectrum',
+    accent: '#4C7CFF',
+    nodeCount: 1000,
+    radius: 3.1,
+    jitter: 0.16,
+    curl: 0,
+    coreOn: false,
+    thickness: 3.0,
+    bloomIntensity: 1.35,
+    bloomThreshold: 0.09,
+    halftone: false,
+    emission: 2.35,
+    density: 0.16,
+    decimals: 3,
+    pulseSpeed: 0.4,
+    orbitSpeed: 0.012,
+  },
+  // draping funnel cascade (recreates the waterfall reference frame)
+  Cascade: {
+    spread: 'cascade',
+    colorMode: 'spectrum',
+    accent: '#FF5C7A',
+    nodeCount: 540,
+    radius: 3.0,
+    jitter: 0.3,
+    curl: 0,
+    thickness: 1.4,
+    bloomIntensity: 1.3,
+    bloomThreshold: 0.18,
+    halftone: false,
+    emission: 1.5,
+    density: 0.24,
+    decimals: 3,
+    pulseSpeed: 0.4,
   },
   // double helix (DNA)
   Helix: {
@@ -247,120 +281,5 @@ export const PRESETS: Record<PresetName, Partial<Params>> = {
     dataMode: 'parameter',
     decimals: 3,
     orbitSpeed: 0.06,
-  },
-  // vortex dipole — two counter-rotating swirls, blue/red split (flow field)
-  Vortex: {
-    spread: 'vortex',
-    colorMode: 'spectrum',
-    accent: '#4C7CFF',
-    nodeCount: 760,
-    radius: 3.3,
-    curl: 0,
-    thickness: 1.5,
-    glass: 0.4,
-    bloomIntensity: 1.45,
-    bloomThreshold: 0.12,
-    emission: 1.7,
-    density: 0.12,
-    dataMode: 'parameter',
-    decimals: 3,
-    orbitSpeed: 0.0,
-  },
-  // Flamm paraboloid — the Einstein–Rosen bridge throat (wireframe surface)
-  Wormhole: {
-    spread: 'wormhole',
-    colorMode: 'spectrum',
-    accent: '#4C7CFF',
-    nodeCount: 780,
-    radius: 3.2,
-    curl: 0,
-    coreOn: false,
-    thickness: 1.3,
-    glass: 0.4,
-    bloomIntensity: 1.35,
-    bloomThreshold: 0.14,
-    emission: 1.6,
-    density: 0.1,
-    dataMode: 'parameter',
-    decimals: 3,
-    orbitSpeed: 0.05,
-  },
-  // Gabriel's horn — finite volume, infinite area
-  Horn: {
-    spread: 'horn',
-    colorMode: 'spectrum',
-    accent: '#FF5C7A',
-    nodeCount: 700,
-    radius: 3.2,
-    curl: 0,
-    coreOn: false,
-    thickness: 1.3,
-    glass: 0.4,
-    bloomIntensity: 1.35,
-    bloomThreshold: 0.14,
-    emission: 1.6,
-    density: 0.1,
-    dataMode: 'parameter',
-    decimals: 3,
-    orbitSpeed: 0.05,
-  },
-  // standing-wave sheet — an open interference grid
-  Wavegrid: {
-    spread: 'wavegrid',
-    colorMode: 'spectrum',
-    accent: '#E8702A',
-    nodeCount: 800,
-    radius: 3.2,
-    curl: 0,
-    coreOn: false,
-    thickness: 1.2,
-    glass: 0.4,
-    bloomIntensity: 1.35,
-    bloomThreshold: 0.14,
-    emission: 1.6,
-    density: 0.1,
-    dataMode: 'parameter',
-    decimals: 3,
-    orbitSpeed: 0.05,
-  },
-  // catenoid — minimal surface, isometric mate of the helicoid (shares nodeCount)
-  Catenoid: {
-    spread: 'catenoid',
-    morphTo: 'helicoid',
-    colorMode: 'spectrum',
-    accent: '#35E0C8',
-    nodeCount: 720,
-    radius: 3.2,
-    curl: 0,
-    coreOn: false,
-    thickness: 1.3,
-    glass: 0.4,
-    bloomIntensity: 1.35,
-    bloomThreshold: 0.14,
-    emission: 1.6,
-    density: 0.1,
-    dataMode: 'parameter',
-    decimals: 3,
-    orbitSpeed: 0.05,
-  },
-  // helicoid — minimal surface, the catenoid unrolled (shares nodeCount)
-  Helicoid: {
-    spread: 'helicoid',
-    morphTo: 'catenoid',
-    colorMode: 'spectrum',
-    accent: '#4C7CFF',
-    nodeCount: 720,
-    radius: 3.2,
-    curl: 0,
-    coreOn: false,
-    thickness: 1.3,
-    glass: 0.4,
-    bloomIntensity: 1.35,
-    bloomThreshold: 0.14,
-    emission: 1.6,
-    density: 0.1,
-    dataMode: 'parameter',
-    decimals: 3,
-    orbitSpeed: 0.05,
   },
 }

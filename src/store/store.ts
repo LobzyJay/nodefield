@@ -24,11 +24,7 @@ const LUT = new Set<string>(LUT_KEYS as string[])
 
 // Randomize draws from curated, on-brand pools so every roll already looks like
 // Nodefield (the generative-craft "defaults are on-brand" rule).
-const RANDOM_SHAPES = [
-  'sphere', 'disc', 'helix', 'mobius', 'torus', 'wave', 'cascade', 'superformula',
-  'knot', 'vortex', 'attractor', 'wormhole', 'hyperboloid', 'pseudosphere', 'horn',
-  'wavegrid', 'catenoid', 'helicoid',
-]
+const RANDOM_SHAPES = ['sphere', 'disc', 'helix', 'mobius', 'torus', 'wave', 'cascade', 'superformula', 'knot', 'attractor']
 const RANDOM_ACCENTS = ['#FD607B', '#4C7CFF', '#35E0C8', '#7B3FE4', '#E1101A', '#E8702A', '#FF5C7A', '#A8E10C']
 
 // ---- URL hash persistence ----

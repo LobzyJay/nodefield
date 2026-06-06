@@ -60,25 +60,6 @@ function baseReadout(s: Params): { title: string; lines: string[] } {
       return { title: 'spiral cascade', lines: ['rᵢ = R·layer,  θ = i·Φ + layer·6π', `Φ = ${ga}°`] }
     case 'wave':
       return { title: `wave · ${s.waveForm}`, lines: ['z = Σ sin(αu + φ)', 'flowing ribbons'] }
-    case 'vortex':
-      return {
-        title: 'vortex dipole',
-        lines: ['v = Σ Γₙ (r−rₙ)⊥ / |r−rₙ|²', 'two counter-rotating swirls'],
-      }
-    case 'wormhole':
-      return { title: 'wormhole', lines: ['Flamm paraboloid · r = cosh v', 'Einstein–Rosen bridge'] }
-    case 'hyperboloid':
-      return { title: 'hyperboloid', lines: ['x²+z² − y² = 1', 'ruled — built from straight lines'] }
-    case 'pseudosphere':
-      return { title: 'pseudosphere', lines: ['tractricoid · constant K = −1', 'a model of hyperbolic geometry'] }
-    case 'horn':
-      return { title: 'horn', lines: ['y = 1/x, revolved', "Gabriel's horn — finite volume, infinite area"] }
-    case 'wavegrid':
-      return { title: 'wavegrid', lines: ['z = Σ sin(αs)·cos(βt)', 'standing-wave sheet'] }
-    case 'catenoid':
-      return { title: 'catenoid', lines: ['(cosh v cos u, v, cosh v sin u)', 'minimal surface — bends into the helicoid'] }
-    case 'helicoid':
-      return { title: 'helicoid', lines: ['(v cos u, c·u, v sin u)', 'minimal surface — the catenoid unrolled'] }
     default:
       return { title: String(s.spread), lines: [] }
   }

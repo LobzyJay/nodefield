@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store/store'
-import { MATH_PRESETS, SHAPE_PRESETS, SURFACE_PRESETS, type PresetName } from '../store/presets'
+import { MATH_PRESETS, SHAPE_PRESETS, type PresetName } from '../store/presets'
 
 // the full catalog lives behind one menu — the bar stays just Randomize + the menu
 const SECTIONS = [
   { label: 'Shapes', list: SHAPE_PRESETS },
   { label: 'Math', list: MATH_PRESETS },
-  { label: 'Surfaces', list: SURFACE_PRESETS },
 ] as const
 
 export function PresetBar() {

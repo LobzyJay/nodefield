@@ -1,6 +1,6 @@
 import { Vector3 } from 'three'
 import { mulberry32, valueNoise } from './rng'
-import { buildStrands, makeAttractor, makeKnot, makeSurface, makeVortex } from './strands'
+import { buildStrands, makeAttractor, makeKnot } from './strands'
 
 export type SpreadMode =
   | 'sphere'
@@ -13,14 +13,6 @@ export type SpreadMode =
   | 'attractor'
   | 'knot'
   | 'superformula'
-  | 'vortex'
-  | 'hyperboloid'
-  | 'wormhole'
-  | 'pseudosphere'
-  | 'horn'
-  | 'wavegrid'
-  | 'catenoid'
-  | 'helicoid'
 
 export type WaveForm = 'curtain' | 'drape' | 'ripple' | 'flag'
 
@@ -31,10 +23,6 @@ export type MorphTarget = SpreadMode | 'off'
 
 // shapes that place node i via endpoint() — these can morph into one another
 export const RADIAL = new Set(['sphere', 'disc', 'cascade', 'helix', 'mobius', 'torus', 'superformula'])
-
-// parametric surfaces drawn as wireframe line-meshes — built via makeSurface and,
-// because they share a fixed nodeCount-derived resolution, can morph to one another
-export const SURFACES = new Set(['hyperboloid', 'wormhole', 'pseudosphere', 'horn', 'wavegrid', 'catenoid', 'helicoid'])
 
 // the golden angle, 137.5 degrees — the default phyllotaxis divergence
 export const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
@@ -360,21 +348,6 @@ export function buildField(p: FieldParams): FieldData {
   // curve-based math objects are built from polylines via the shared strand builder
   if (p.spread === 'attractor') return buildStrands(makeAttractor(p), p.radius)
   if (p.spread === 'knot') return buildStrands(makeKnot(p), p.radius)
-  if (p.spread === 'vortex') return buildStrands(makeVortex(p), p.radius)
-  if (SURFACES.has(p.spread)) {
-    const fd = buildStrands(makeSurface(p), p.radius)
-    // surfaces morph to surfaces: same nodeCount-derived resolution → matching
-    // count/segCount lets us graft the target's positions for the shader lerp.
-    if (p.morphTo !== 'off' && p.morphTo !== p.spread && (RADIAL.has(p.morphTo) || SURFACES.has(p.morphTo))) {
-      const fb = buildField({ ...p, spread: p.morphTo, morphTo: 'off' })
-      if (fb.segCount === fd.segCount && fb.count === fd.count) {
-        fd.segStartB = fb.segStart
-        fd.segEndB = fb.segEnd
-        fd.nodePosB = fb.nodePos
-      }
-    }
-    return fd
-  }
 
   const n = Math.max(1, Math.floor(p.nodeCount))
   const P = p.curl > 0.001 ? 22 : 2 // points per fiber (dense enough for smooth curls)
@@ -489,7 +462,7 @@ export function buildField(p: FieldParams): FieldData {
   let segStartB: Float32Array | undefined
   let segEndB: Float32Array | undefined
   let nodePosB: Float32Array | undefined
-  if (p.morphTo !== 'off' && p.morphTo !== p.spread && (RADIAL.has(p.morphTo) || SURFACES.has(p.morphTo))) {
+  if (p.morphTo !== 'off' && p.morphTo !== p.spread && RADIAL.has(p.morphTo)) {
     const fb = buildField({ ...p, spread: p.morphTo, morphTo: 'off' })
     if (fb.segCount === segCount && fb.count === n) {
       segStartB = fb.segStart

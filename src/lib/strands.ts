@@ -360,7 +360,9 @@ function buildSurface(
     lines.push({ pts, closed: false, vGrad })
   }
 
-  normalize(allForNorm, p.radius, 1.5)
+  // fill ~1.05 keeps the full silhouette in frame (tall surfaces like the
+  // catenoid/hyperboloid clipped top-and-bottom at 1.5)
+  normalize(allForNorm, p.radius, 1.05)
 
   const strands: Strand[] = []
   let cursor = 0

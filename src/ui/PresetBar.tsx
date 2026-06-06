@@ -11,25 +11,35 @@ const FAMILIES = [
 ] as const
 type FamKey = (typeof FAMILIES)[number]['key']
 
-function familyOf(n: PresetName | 'Custom'): FamKey | null {
-  if (SHAPE_PRESETS.includes(n as PresetName)) return 'shapes'
-  if (MATH_PRESETS.includes(n as PresetName)) return 'math'
-  if (SURFACE_PRESETS.includes(n as PresetName)) return 'surfaces'
+// which family a raw spread belongs to (so the tab follows even on a Custom roll)
+const SHAPE_SPREADS = new Set(['sphere', 'disc', 'cascade', 'helix', 'mobius', 'torus', 'wave'])
+const MATH_SPREADS = new Set(['attractor', 'knot', 'superformula', 'vortex'])
+const SURFACE_SPREADS = new Set(['hyperboloid', 'wormhole', 'pseudosphere', 'horn', 'wavegrid', 'catenoid', 'helicoid'])
+
+function familyOf(preset: PresetName | 'Custom', spread: string): FamKey | null {
+  if (SHAPE_PRESETS.includes(preset as PresetName)) return 'shapes'
+  if (MATH_PRESETS.includes(preset as PresetName)) return 'math'
+  if (SURFACE_PRESETS.includes(preset as PresetName)) return 'surfaces'
+  // Custom: fall back to the visible spread so the right family stays selected
+  if (SHAPE_SPREADS.has(spread)) return 'shapes'
+  if (MATH_SPREADS.has(spread)) return 'math'
+  if (SURFACE_SPREADS.has(spread)) return 'surfaces'
   return null
 }
 
 export function PresetBar() {
   const active = useStore((s) => s.activePreset)
+  const spread = useStore((s) => s.spread)
   const apply = useStore((s) => s.applyPreset)
   const randomize = useStore((s) => s.randomize)
   const [tab, setTab] = useState<FamKey>('shapes')
 
-  // keep the visible family in sync with the active preset, so the lit chip
-  // (after ←/→ cycling, randomize, or applying any preset) is always on screen
+  // keep the visible family in sync with what's on screen, so the lit chip (after
+  // ←/→ cycling or applying a preset) or the right family (after a randomize) shows
   useEffect(() => {
-    const fam = familyOf(active)
+    const fam = familyOf(active, spread)
     if (fam) setTab(fam)
-  }, [active])
+  }, [active, spread])
 
   const list = FAMILIES.find((f) => f.key === tab)!.list
 

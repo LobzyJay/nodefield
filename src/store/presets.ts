@@ -71,10 +71,11 @@ export type PresetName =
   | 'Superform'
   | 'Knot'
 
-// the two preset families (single source of truth for the menu + the cycle order)
-export const SHAPE_PRESETS: PresetName[] = ['Nucleus', 'Wave', 'Drape', 'Cascade', 'Helix', 'Möbius', 'Torus', 'Disc', 'Fan']
+// preset families (single source of truth for the menu + the cycle order)
+export const SHAPE_PRESETS: PresetName[] = ['Nucleus', 'Wave', 'Drape', 'Cascade', 'Helix', 'Möbius', 'Torus', 'Disc']
 export const MATH_PRESETS: PresetName[] = ['Lorenz', 'Superform', 'Knot']
-export const PRESET_ORDER: PresetName[] = [...SHAPE_PRESETS, ...MATH_PRESETS]
+export const HERO_PRESETS: PresetName[] = ['Fan']
+export const PRESET_ORDER: PresetName[] = [...SHAPE_PRESETS, ...MATH_PRESETS, ...HERO_PRESETS]
 
 export const PRESETS: Record<PresetName, Partial<Params>> = {
   // sphere burst, cool spectrum — the hero (recreates the Gray Matter frames)

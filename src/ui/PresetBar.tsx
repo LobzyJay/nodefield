@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store/store'
-import { MATH_PRESETS, SHAPE_PRESETS, type PresetName } from '../store/presets'
+import { HERO_PRESETS, MATH_PRESETS, SHAPE_PRESETS, type PresetName } from '../store/presets'
 
 // the full catalog lives behind one menu — the bar stays just Randomize + the menu
 const SECTIONS = [
   { label: 'Shapes', list: SHAPE_PRESETS },
   { label: 'Math', list: MATH_PRESETS },
+  { label: 'Hero', list: HERO_PRESETS },
 ] as const
 
 export function PresetBar() {
@@ -47,42 +48,40 @@ export function PresetBar() {
         Randomize
       </button>
       <span className="preset-div" />
-      <div className="preset-menu-wrap">
-        <button
-          className={'chip preset-menu' + (open ? ' preset-menu-open' : '')}
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          title="Choose a preset"
-        >
-          {label}
-          <svg className="preset-caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </button>
-        {open && (
-          <div className="preset-popover">
-            {SECTIONS.map((sec) => (
-              <div className="preset-pop-section" key={sec.label}>
-                <div className="preset-pop-label">{sec.label}</div>
-                <div className="preset-pop-grid">
-                  {sec.list.map((n: PresetName) => (
-                    <button
-                      key={n}
-                      className={'chip' + (active === n ? ' chip-active' : '')}
-                      onClick={() => {
-                        apply(n)
-                        setOpen(false)
-                      }}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
+      <button
+        className={'chip preset-menu' + (open ? ' preset-menu-open' : '')}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        title="Choose a preset"
+      >
+        {label}
+        <svg className="preset-caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {open && (
+        <div className="preset-popover">
+          {SECTIONS.map((sec) => (
+            <div className="preset-pop-section" key={sec.label}>
+              <div className="preset-pop-label">{sec.label}</div>
+              <div className="preset-pop-grid">
+                {sec.list.map((n: PresetName) => (
+                  <button
+                    key={n}
+                    className={'chip' + (active === n ? ' chip-active' : '')}
+                    onClick={() => {
+                      apply(n)
+                      setOpen(false)
+                    }}
+                  >
+                    {n}
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

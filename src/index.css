@@ -130,10 +130,6 @@ canvas {
 }
 
 /* preset menu button — shows the current preset, opens the catalog popover */
-.preset-menu-wrap {
-  position: relative;
-  display: flex;
-}
 .preset-menu {
   display: inline-flex;
   align-items: center;
@@ -155,33 +151,34 @@ canvas {
   }
 }
 
-/* the catalog — a calm glass card that opens upward from the menu button */
+/* the catalog — a calm glass card centred above the bar */
 .preset-popover {
   position: absolute;
-  bottom: calc(100% + 8px);
-  right: 0;
-  width: min(360px, 80vw);
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(420px, 86vw);
   display: flex;
   flex-direction: column;
   gap: 11px;
-  padding: 12px;
+  padding: 14px 16px;
   background: rgba(11, 13, 18, 0.86);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
-  transform-origin: bottom right;
+  transform-origin: bottom center;
   animation: preset-pop-in 0.15s var(--ease-out);
 }
 @keyframes preset-pop-in {
   from {
     opacity: 0;
-    transform: scale(0.97) translateY(4px);
+    transform: translateX(-50%) scale(0.97) translateY(4px);
   }
   to {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translateX(-50%) scale(1) translateY(0);
   }
 }
 .preset-pop-section {

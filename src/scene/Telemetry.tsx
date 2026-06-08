@@ -6,8 +6,10 @@ import { useStore } from '../store/store'
 import type { DataMode, NumberFormat } from '../store/types'
 import { FOCUS_GREEN } from '../lib/color'
 import { mulberry32 } from '../lib/rng'
+import monoFontUrl from '../fonts/JetBrainsMono-Regular.ttf?url'
 
-const MONO = '/fonts/JetBrainsMono-Regular.ttf'
+// Bundled + base-aware so it resolves on any deploy base (e.g. GitHub Pages '/nodefield/')
+const MONO = monoFontUrl
 const INK = '#f4f7fb'
 const MAX_LABELS = 120
 

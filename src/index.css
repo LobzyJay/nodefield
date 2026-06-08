@@ -3,14 +3,14 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  src: url('/fonts/JetBrainsMono-Regular.ttf') format('truetype');
+  src: url('./fonts/JetBrainsMono-Regular.ttf') format('truetype');
 }
 @font-face {
   font-family: 'JetBrains Mono';
   font-weight: 500;
   font-style: normal;
   font-display: swap;
-  src: url('/fonts/JetBrainsMono-Medium.ttf') format('truetype');
+  src: url('./fonts/JetBrainsMono-Medium.ttf') format('truetype');
 }
 
 :root {

@@ -63,13 +63,11 @@ canvas {
   letter-spacing: 0.34em;
 }
 
-.overlay .brand .dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 3px rgba(91, 140, 255, 0.16);
-  animation: nf-pulse 2.6s ease-in-out infinite;
+.overlay .brand .brandmark {
+  width: 18px;
+  height: 18px;
+  display: block;
+  animation: nf-pulse 3.4s ease-in-out infinite;
 }
 
 @keyframes nf-pulse {
@@ -293,7 +291,7 @@ canvas {
 /* reduced motion: drop the looping pulse and the press/transition movement;
    keep colour/opacity changes that aid comprehension */
 @media (prefers-reduced-motion: reduce) {
-  .overlay .brand .dot {
+  .overlay .brand .brandmark {
     animation: none;
   }
   .chip,

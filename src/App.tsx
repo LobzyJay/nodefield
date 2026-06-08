@@ -163,7 +163,7 @@ export default function App() {
         <>
           <div className="overlay">
             <div className="brand">
-              <span className="dot" />
+              <img className="brandmark" src="/nodefield-glyph.svg" alt="" width="18" height="18" />
               NODEFIELD
             </div>
             <HudMeta />

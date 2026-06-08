@@ -77,8 +77,8 @@ const levaTheme = {
 
 // Keyboard layer for power users: cycle presets, replay the entrance, reseed,
 // and hide the whole UI for a clean capture. Returns whether the UI is hidden.
-function useHotkeys(): boolean {
-  const [uiHidden, setUiHidden] = useState(false)
+function useHotkeys(initialHidden = false): boolean {
+  const [uiHidden, setUiHidden] = useState(initialHidden)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // never hijack typing inside a Leva field
@@ -137,8 +137,36 @@ function HudMeta() {
   )
 }
 
+// Lightweight embed (?embed): hide the whole UI and render a single Randomize
+// button that cycles the curated shapes. Used by the artbyade article iframe.
+const EMBED = typeof location !== 'undefined' && new URLSearchParams(location.search).has('embed')
+
+function EmbedBar() {
+  const embedRandomize = useStore((s) => s.embedRandomize)
+  return (
+    <button className="embed-roll" onClick={() => embedRandomize()} aria-label="Randomize the field">
+      <span className="embed-roll-dot" aria-hidden="true" />
+      Randomize
+    </button>
+  )
+}
+
 export default function App() {
-  const uiHidden = useHotkeys()
+  const uiHidden = useHotkeys(EMBED)
+  const surface = useStore((s) => s.surface)
+  const surfaceColor = useStore((s) => s.surfaceColor)
+  const bg = surface === 'dark' ? '#06070A' : surface === 'light' ? '#F4F5F7' : surfaceColor
+
+  useEffect(() => {
+    if (EMBED) useStore.getState().embedApply('Nucleus')
+  }, [])
+
+  // flip the DOM HUD/panels to dark-on-light text when the surface is light
+  useEffect(() => {
+    document.body.classList.toggle('nf-light', surface === 'light')
+    return () => document.body.classList.remove('nf-light')
+  }, [surface])
+
   return (
     <>
       <FrameBox>
@@ -152,9 +180,9 @@ export default function App() {
             preserveDrawingBuffer: true,
           }}
           camera={{ position: [0, 0.4, 8.5], fov: 45, near: 0.1, far: 100 }}
-          onCreated={({ gl }) => gl.setClearColor('#06070A', 1)}
+          onCreated={({ gl }) => gl.setClearColor(bg, 1)}
         >
-          <color attach="background" args={['#06070A']} />
+          <color attach="background" args={[bg]} />
           <Scene />
         </Canvas>
       </FrameBox>
@@ -177,7 +205,8 @@ export default function App() {
           <PresetBar />
         </>
       )}
-      <Leva theme={levaTheme} titleBar={{ title: 'NODE TREE' }} collapsed={false} hidden={uiHidden} />
+      {EMBED && <EmbedBar />}
+      <Leva theme={levaTheme} titleBar={{ title: 'NODE TREE' }} collapsed={false} hidden={uiHidden || EMBED} />
       <Controls />
     </>
   )

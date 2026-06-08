@@ -13,6 +13,12 @@ export type FrameMode = 'free' | 'square' | 'portrait' | 'story' | 'landscape' |
 // How a preset enters: grow it in from the core, or morph from the current shape.
 export type IntroMode = 'grow' | 'morph'
 
+// How the gradient maps onto the field (where along the gradient each point samples).
+export type GradMap = 'fiber' | 'radial' | 'linear' | 'angle'
+
+// The backdrop the field is composited onto — flips the blend mode (additive ↔ ink).
+export type SurfaceMode = 'dark' | 'light' | 'custom'
+
 export interface Params {
   // Structure (expensive — rebuilds geometry)
   nodeCount: number
@@ -26,6 +32,8 @@ export interface Params {
   divergenceAngle: number // degrees in the UI, radians in the field; phyllotaxis angle
   waveFreq: number // wave: fold/ripple density multiplier
   waveTwist: number // wave: spiral-into-ribbon twist (0 = flat sheet)
+  fanSpread: number // fan: angular span in degrees (180 = full half-fan)
+  fanFraming: number // fan: 0 = round radial scatter, 1 = wide hero-box dome
   attractor: AttractorType
   knotP: number
   knotQ: number
@@ -38,6 +46,21 @@ export interface Params {
   // Style (cheap — uniforms)
   colorMode: ColorMode
   accent: string
+  // custom gradient: up to 5 colour slots (each with alpha), evenly spaced by gradCount
+  gradCount: number
+  grad1: string
+  grad2: string
+  grad3: string
+  grad4: string
+  grad5: string
+  grad1A: number
+  grad2A: number
+  grad3A: number
+  grad4A: number
+  grad5A: number
+  gradMap: GradMap // how the gradient maps onto the field
+  surface: SurfaceMode // backdrop the field is shown on (also flips blend mode)
+  surfaceColor: string // custom backdrop hex (when surface === 'custom')
   coreOn: boolean
   coreSize: number
   thickness: number
@@ -64,6 +87,8 @@ export interface Params {
   focusOn: boolean
 
   // Motion (cheap)
+  fanAnchor: number // fan: 0 = float low-centre, 1 = pin apex to the bottom edge
+  tipAttract: boolean // fan: cursor pulls tips toward it (true) vs pushes away (false)
   orbitSpeed: number
   pulseSpeed: number
   phase: number
@@ -86,6 +111,8 @@ export const STRUCTURE_KEYS: (keyof Params)[] = [
   'divergenceAngle',
   'waveFreq',
   'waveTwist',
+  'fanSpread',
+  'fanFraming',
   'attractor',
   'knotP',
   'knotQ',
@@ -96,4 +123,18 @@ export const STRUCTURE_KEYS: (keyof Params)[] = [
 ]
 
 // Keys that only rebuild the cheap color LUT texture (instant, no geometry rebuild).
-export const LUT_KEYS: (keyof Params)[] = ['colorMode', 'accent']
+export const LUT_KEYS: (keyof Params)[] = [
+  'colorMode',
+  'accent',
+  'gradCount',
+  'grad1',
+  'grad2',
+  'grad3',
+  'grad4',
+  'grad5',
+  'grad1A',
+  'grad2A',
+  'grad3A',
+  'grad4A',
+  'grad5A',
+]

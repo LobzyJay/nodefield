@@ -11,9 +11,14 @@ import { Nodes } from './Nodes'
 import { Telemetry } from './Telemetry'
 import { Effects } from './Effects'
 
+// Embed mode (?embed) disables scroll-zoom so a page scroll over the iframe
+// can't push the camera out and blank the field.
+const EMBED = typeof location !== 'undefined' && new URLSearchParams(location.search).has('embed')
+
 // the hero fan lies in the world z=0 plane — used to raycast the cursor onto it
 const FAN_PLANE = new Plane(new Vector3(0, 0, 1), 0)
-const FAN_Y = -2.7 // how far the apex is anchored below centre
+const FAN_Y_FLOAT = -2.7 // apex floating low-centre (anchor 0)
+const FAN_Y_BOTTOM = -3.05 // apex pinned just inside the bottom edge (anchor 1)
 
 export function Scene() {
   const structureVersion = useStore((s) => s.structureVersion)
@@ -22,6 +27,9 @@ export function Scene() {
   const growReplayId = useStore((s) => s.growReplayId)
   const coreOn = useStore((s) => s.coreOn)
   const spread = useStore((s) => s.spread)
+  const surface = useStore((s) => s.surface)
+  const surfaceColor = useStore((s) => s.surfaceColor)
+  const bg = surface === 'dark' ? '#06070A' : surface === 'light' ? '#F4F5F7' : surfaceColor
   // the wave sheet has no centre, so the glowing core never belongs there
   const showCore = coreOn && spread !== 'wave'
 
@@ -38,6 +46,8 @@ export function Scene() {
       divergenceAngle: (s.divergenceAngle * Math.PI) / 180,
       waveFreq: s.waveFreq,
       waveTwist: s.waveTwist,
+      fanSpread: (s.fanSpread * Math.PI) / 180,
+      fanFraming: s.fanFraming,
       attractor: s.attractor,
       knotP: s.knotP,
       knotQ: s.knotQ,
@@ -53,7 +63,11 @@ export function Scene() {
 
   const lut = useMemo(() => {
     const s = snap()
-    return buildLUT(s.colorMode, s.accent)
+    return buildLUT(s.colorMode, s.accent, {
+      count: s.gradCount,
+      colors: [s.grad1, s.grad2, s.grad3, s.grad4, s.grad5],
+      alphas: [s.grad1A, s.grad2A, s.grad3A, s.grad4A, s.grad5A],
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lutVersion])
   useEffect(() => () => lut.dispose(), [lut])
@@ -61,8 +75,10 @@ export function Scene() {
   const groupRef = useRef<Group>(null)
   const drawInRef = useRef(1.2)
   const startRef = useRef(-1)
-  // cursor in field space (xy) + interaction strength (z); the tip shaders read it
+  // cursor in field space (xy) + interaction strength (z); the tip shaders read it.
+  // mouseTarget is the raw raycast hit; mouseRef eases toward it for a smooth lag.
   const mouseRef = useRef(new Vector3(0, 0, 0))
+  const mouseTarget = useRef(new Vector3(0, 0, 0))
   const hitVec = useRef(new Vector3())
   // effective morph amount the GPU + telemetry read (manual slider OR entrance)
   const morphRef = useRef(0)
@@ -117,17 +133,26 @@ export function Scene() {
         // hero fan: locked in one pose. interactivity comes from the cursor playing
         // with the ray TIPS — raycast the pointer onto the fan plane and hand the
         // tip shaders a field-space cursor + strength (the apex never moves).
+        const fanY = FAN_Y_FLOAT + (FAN_Y_BOTTOM - FAN_Y_FLOAT) * s.fanAnchor
         groupRef.current.rotation.set(0, 0, 0)
-        groupRef.current.position.set(0, FAN_Y, 0)
+        groupRef.current.position.set(0, fanY, 0)
         state.raycaster.setFromCamera(state.pointer, state.camera)
         const hit = state.raycaster.ray.intersectPlane(FAN_PLANE, hitVec.current)
+        // strength in z; negative pulls tips toward the cursor (attract), positive pushes away
+        const strength = s.tipAttract ? -1.05 : 1.05
         if (hit) {
-          // world hit -> field-local (undo the group's downward anchor), strength in z
-          mouseRef.current.set(hit.x, hit.y - FAN_Y, 0.9)
+          mouseTarget.current.set(hit.x, hit.y - fanY, strength) // field-local target
         } else {
-          mouseRef.current.z = 0
+          mouseTarget.current.z = 0 // glide the pull off when the cursor leaves the plane
         }
+        // ease the influence point toward the target so the tip-play has a smooth,
+        // lagging follow (matches the live article hero's per-tip easing). dt-independent.
+        const k = 1 - Math.exp(-dt / 0.09)
+        mouseRef.current.x += (mouseTarget.current.x - mouseRef.current.x) * k
+        mouseRef.current.y += (mouseTarget.current.y - mouseRef.current.y) * k
+        mouseRef.current.z += (mouseTarget.current.z - mouseRef.current.z) * k
       } else {
+        mouseTarget.current.z = 0
         mouseRef.current.z = 0
         groupRef.current.position.set(0, 0, 0)
         groupRef.current.rotation.y += s.orbitSpeed * dt
@@ -169,7 +194,7 @@ export function Scene() {
 
   return (
     <>
-      <fogExp2 attach="fog" args={['#06070A', 0.05]} />
+      <fogExp2 attach="fog" args={[bg, 0.05]} />
       <group ref={groupRef}>
         {showCore && <Core />}
         <Fibers field={field} lut={lut} drawInValue={drawInRef} morphValue={morphRef} mouseValue={mouseRef} />
@@ -184,6 +209,7 @@ export function Scene() {
         minDistance={3}
         maxDistance={30}
         enablePan={false}
+        enableZoom={!EMBED}
       />
       <Effects />
     </>

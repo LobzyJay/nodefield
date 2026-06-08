@@ -9,6 +9,8 @@ import { downloadRaster, downloadSVG } from '../lib/export'
 // contextual disclosure: which shapes a param applies to
 const PHYLLO_SHAPES = ['sphere', 'disc', 'cascade', 'superformula']
 const sp = (get: (p: string) => unknown) => get('Main.spread') as string
+const cm = (get: (p: string) => unknown) => get('Main.colorMode') as string
+const sf = (get: (p: string) => unknown) => get('Style.surface') as string
 
 // filename slug from the current look
 function slug() {
@@ -61,6 +63,10 @@ function pushStoreToLeva(set: (o: Record<string, unknown>) => void): () => void 
     divergenceAngle: s.divergenceAngle,
     waveFreq: s.waveFreq,
     waveTwist: s.waveTwist,
+    fanSpread: s.fanSpread,
+    fanFraming: s.fanFraming,
+    fanAnchor: s.fanAnchor,
+    tipAttract: s.tipAttract,
     attractor: s.attractor,
     knotP: s.knotP,
     knotQ: s.knotQ,
@@ -72,6 +78,20 @@ function pushStoreToLeva(set: (o: Record<string, unknown>) => void): () => void 
     seed: s.seed,
     colorMode: s.colorMode,
     accent: s.accent,
+    gradCount: s.gradCount,
+    grad1: s.grad1,
+    grad2: s.grad2,
+    grad3: s.grad3,
+    grad4: s.grad4,
+    grad5: s.grad5,
+    grad1A: s.grad1A,
+    grad2A: s.grad2A,
+    grad3A: s.grad3A,
+    grad4A: s.grad4A,
+    grad5A: s.grad5A,
+    gradMap: s.gradMap,
+    surface: s.surface,
+    surfaceColor: s.surfaceColor,
     coreOn: s.coreOn,
     emission: s.emission,
     thickness: s.thickness,
@@ -137,7 +157,7 @@ export function Controls() {
         colorMode: {
           value: P.colorMode,
           label: 'color',
-          options: { spectrum: 'spectrum', nature: 'nature', single: 'single' },
+          options: { spectrum: 'spectrum', nature: 'nature', single: 'single', custom: 'custom' },
           onChange: mk('colorMode'),
         },
         accent: { value: P.accent, label: 'accent', onChange: mk('accent') },
@@ -186,6 +206,39 @@ export function Controls() {
           onChange: mk('waveTwist'),
           render: (get) => sp(get) === 'wave',
         },
+        fanSpread: {
+          value: P.fanSpread,
+          min: 60,
+          max: 180,
+          step: 1,
+          label: 'fan spread °',
+          onChange: mk('fanSpread'),
+          render: (get) => sp(get) === 'fan',
+        },
+        fanFraming: {
+          value: P.fanFraming,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: 'fan framing',
+          onChange: mk('fanFraming'),
+          render: (get) => sp(get) === 'fan',
+        },
+        fanAnchor: {
+          value: P.fanAnchor,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: 'fan anchor',
+          onChange: mk('fanAnchor'),
+          render: (get) => sp(get) === 'fan',
+        },
+        tipAttract: {
+          value: P.tipAttract,
+          label: 'tip attract',
+          onChange: mk('tipAttract'),
+          render: (get) => sp(get) === 'fan',
+        },
         attractor: {
           value: P.attractor,
           options: { lorenz: 'lorenz', aizawa: 'aizawa', thomas: 'thomas', halvorsen: 'halvorsen', dadras: 'dadras' },
@@ -227,6 +280,43 @@ export function Controls() {
     ),
     Style: folder(
       {
+        surface: {
+          value: P.surface,
+          label: 'surface',
+          options: { dark: 'dark', light: 'light', custom: 'custom' },
+          onChange: mk('surface'),
+        },
+        surfaceColor: {
+          value: P.surfaceColor,
+          label: '· colour',
+          onChange: mk('surfaceColor'),
+          render: (get) => sf(get) === 'custom',
+        },
+        gradMap: {
+          value: P.gradMap,
+          label: 'gradient map',
+          options: { 'along fiber': 'fiber', radial: 'radial', 'linear (y)': 'linear', angle: 'angle' },
+          onChange: mk('gradMap'),
+        },
+        gradCount: {
+          value: P.gradCount,
+          min: 2,
+          max: 5,
+          step: 1,
+          label: 'stops',
+          onChange: mk('gradCount'),
+          render: (get) => cm(get) === 'custom',
+        },
+        grad1: { value: P.grad1, label: 'stop 1', onChange: mk('grad1'), render: (get) => cm(get) === 'custom' },
+        grad1A: { value: P.grad1A, min: 0, max: 1, step: 0.01, label: '· alpha', onChange: mk('grad1A'), render: (get) => cm(get) === 'custom' },
+        grad2: { value: P.grad2, label: 'stop 2', onChange: mk('grad2'), render: (get) => cm(get) === 'custom' },
+        grad2A: { value: P.grad2A, min: 0, max: 1, step: 0.01, label: '· alpha', onChange: mk('grad2A'), render: (get) => cm(get) === 'custom' },
+        grad3: { value: P.grad3, label: 'stop 3', onChange: mk('grad3'), render: (get) => cm(get) === 'custom' && (get('Style.gradCount') as number) >= 3 },
+        grad3A: { value: P.grad3A, min: 0, max: 1, step: 0.01, label: '· alpha', onChange: mk('grad3A'), render: (get) => cm(get) === 'custom' && (get('Style.gradCount') as number) >= 3 },
+        grad4: { value: P.grad4, label: 'stop 4', onChange: mk('grad4'), render: (get) => cm(get) === 'custom' && (get('Style.gradCount') as number) >= 4 },
+        grad4A: { value: P.grad4A, min: 0, max: 1, step: 0.01, label: '· alpha', onChange: mk('grad4A'), render: (get) => cm(get) === 'custom' && (get('Style.gradCount') as number) >= 4 },
+        grad5: { value: P.grad5, label: 'stop 5', onChange: mk('grad5'), render: (get) => cm(get) === 'custom' && (get('Style.gradCount') as number) >= 5 },
+        grad5A: { value: P.grad5A, min: 0, max: 1, step: 0.01, label: '· alpha', onChange: mk('grad5A'), render: (get) => cm(get) === 'custom' && (get('Style.gradCount') as number) >= 5 },
         coreOn: { value: P.coreOn, label: 'core', onChange: mk('coreOn') },
         thickness: { value: P.thickness, min: 0.5, max: 6, step: 0.1, onChange: mk('thickness') },
         glass: { value: P.glass, min: 0, max: 1.5, step: 0.05, label: 'glass sheen', onChange: mk('glass') },

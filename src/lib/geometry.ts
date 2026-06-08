@@ -41,6 +41,8 @@ export interface FieldParams {
   divergenceAngle: number // radians, phyllotaxis angle (default golden)
   waveFreq: number // wave fold/ripple density multiplier
   waveTwist: number // wave spiral-into-ribbon twist
+  fanSpread: number // fan angular span (radians)
+  fanFraming: number // fan 0 = round scatter, 1 = wide hero-box dome
   attractor: AttractorType
   knotP: number
   knotQ: number
@@ -116,10 +118,25 @@ function endpoint(p: FieldParams, i: number, n: number, seedPhase: number, out: 
       // hero fan (the Stripe look): rays from one apex sweeping the upper half-plane,
       // with varied lengths for an organic spray. Anchored low by the Scene.
       const t = n > 1 ? i / (n - 1) : 0.5
-      const ang = Math.PI * (0.05 + 0.9 * t) // ~9° .. ~171° CCW from +x → upward fan
+      // centre the span so any fanSpread stays symmetric around straight-up
+      const half = p.fanSpread / 2
+      const ang = Math.PI / 2 + (1 - 2 * t) * half // top-centre ± half-span → upward fan
       const lj = (i * 0.6180339887) % 1 // golden-ratio hash → length variety, no banding
-      const rr = radius * (0.5 + 1.05 * lj)
-      out.set(Math.cos(ang) * rr, Math.sin(ang) * rr, 0)
+      const dx = Math.cos(ang)
+      const dy = Math.sin(ang) // ≥ 0 across the span → always points up
+      let rr = radius * (0.5 + 1.05 * lj)
+      // hero framing: clamp each ray into a wide box (apex at bottom-centre) so the
+      // silhouette becomes a framed dome instead of a round radial scatter. The box
+      // is ~2:1 (half-width == height), matching the article hero's bottom-anchored fan.
+      if (p.fanFraming > 0) {
+        const hw = radius * 1.55 // box half-width
+        const bh = radius * 1.55 // box height (apex → top); equal → 2:1 framed dome
+        let clamped = rr
+        if (Math.abs(dx) > 1e-4) clamped = Math.min(clamped, hw / Math.abs(dx))
+        if (dy > 1e-4) clamped = Math.min(clamped, bh / dy)
+        rr = rr + (clamped - rr) * p.fanFraming
+      }
+      out.set(dx * rr, dy * rr, 0)
       break
     }
     case 'superformula': {

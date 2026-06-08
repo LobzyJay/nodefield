@@ -139,6 +139,10 @@ export function Telemetry({
   const decimals = useStore((s) => s.decimals)
   const flicker = useStore((s) => s.flicker)
   const focusOn = useStore((s) => s.focusOn)
+  const surface = useStore((s) => s.surface)
+  // numbers flip to dark ink on a light surface (with a light halo instead of dark)
+  const ink = surface === 'light' ? '#0c0e12' : INK
+  const inkOutline = surface === 'light' ? '#f4f5f7' : '#06070A'
 
   const labels = useMemo(() => selectLabels(field, density, dataMode), [field, density, dataMode])
   const refs = useRef<(any | null)[]>([])
@@ -167,10 +171,10 @@ export function Telemetry({
         text: formatValue(l.base, effDecimals, numberFormat, l.choice),
         size: baseSize * l.sizeMul,
         opacity: l.opacity,
-        color: l.special ? FOCUS_GREEN : INK,
+        color: l.special ? FOCUS_GREEN : ink,
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [labels, numberFormat, effDecimals],
+    [labels, numberFormat, effDecimals, ink],
   )
   ;(window as unknown as { nfLabels: ExportLabel[] }).nfLabels = numbersOn ? exportLabels : []
 
@@ -218,14 +222,14 @@ export function Telemetry({
             ref={(r) => (refs.current[i] = r)}
             font={MONO}
             fontSize={baseSize * l.sizeMul}
-            color={l.special ? FOCUS_GREEN : INK}
+            color={l.special ? FOCUS_GREEN : ink}
             fillOpacity={l.opacity}
             anchorX="center"
             anchorY="middle"
             letterSpacing={-0.02}
             outlineWidth="3%"
             outlineBlur="34%"
-            outlineColor="#06070A"
+            outlineColor={inkOutline}
             outlineOpacity={0.55}
             depthOffset={-2}
           >

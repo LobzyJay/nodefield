@@ -17,6 +17,8 @@ interface StoreState extends Params {
   replayGrow: () => void
   reseed: () => void
   randomize: () => void
+  embedApply: (name: PresetName) => void
+  embedRandomize: () => void
 }
 
 const STRUCTURE = new Set<string>(STRUCTURE_KEYS as string[])
@@ -26,6 +28,24 @@ const LUT = new Set<string>(LUT_KEYS as string[])
 // Nodefield (the generative-craft "defaults are on-brand" rule).
 const RANDOM_SHAPES = ['sphere', 'disc', 'helix', 'mobius', 'torus', 'wave', 'cascade', 'superformula', 'knot', 'attractor']
 const RANDOM_ACCENTS = ['#FD607B', '#4C7CFF', '#35E0C8', '#7B3FE4', '#E1101A', '#E8702A', '#FF5C7A', '#A8E10C']
+
+// ---- Embed mode (?embed) ----
+// A stripped, lightweight build for the artbyade article iframe: the engine can
+// only make these shapes, Randomize cycles between them (morphing where the
+// topology allows), and a fixed config is force-applied on every roll so the
+// field never picks up a core, curl, tip-dots, the big green focus number, or
+// idle motion. The five shapes are sphere/wave/cascade/helix/mobius — shown as
+// six preset chips (Wave and Drape are both the wave shape).
+const EMBED_PRESETS: PresetName[] = ['Nucleus', 'Wave', 'Drape', 'Cascade', 'Helix', 'Möbius']
+const EMBED_CONFIG: Partial<Params> = {
+  coreOn: false, // no core (the user's default)
+  curl: 0, // no curls
+  dotSize: 0, // tip dots off
+  focusOn: false, // remove the large green focus number
+  orbitSpeed: 0, // fixed in place until the cursor drives it
+  pulseSpeed: 0,
+  intro: 'morph', // radial->radial rolls flow instead of re-growing
+}
 
 // ---- URL hash persistence ----
 function encodeHash(p: Params): string {
@@ -186,6 +206,39 @@ export const useStore = create<StoreState>((setState, getState) => {
         uiSyncId: s.uiSyncId + 1,
       }))
       scheduleHash()
+    },
+
+    // Embed: apply a curated preset with the embed config baked in, in a single
+    // setState so the morph entrance isn't clobbered by a follow-up rebuild.
+    embedApply: (name) => {
+      const prev = getState()
+      const target = { ...DEFAULT_PARAMS, ...PRESETS[name], ...EMBED_CONFIG }
+      const morphIntro = target.spread !== prev.spread && RADIAL.has(prev.spread) && RADIAL.has(target.spread)
+      const patch: Partial<StoreState> = {
+        ...target,
+        seed: 1 + Math.floor(Math.random() * 999),
+        activePreset: name,
+      }
+      if (morphIntro) {
+        patch.morphTo = prev.spread
+        patch.morph = 0
+      }
+      setState(patch)
+      setState((s) => ({
+        structureVersion: s.structureVersion + 1,
+        lutVersion: s.lutVersion + 1,
+        uiSyncId: s.uiSyncId + 1,
+        ...(morphIntro ? { introMorphId: s.introMorphId + 1 } : {}),
+      }))
+      scheduleHash()
+    },
+
+    // Embed Randomize: roll a different curated shape than the current one.
+    embedRandomize: () => {
+      const cur = getState().activePreset
+      const choices = EMBED_PRESETS.filter((n) => n !== cur)
+      const name = choices[Math.floor(Math.random() * choices.length)] ?? EMBED_PRESETS[0]
+      getState().embedApply(name)
     },
   }
 })

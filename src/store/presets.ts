@@ -13,6 +13,8 @@ export const DEFAULT_PARAMS: Params = {
   divergenceAngle: 137.50776, // degrees (the golden angle)
   waveFreq: 1,
   waveTwist: 0,
+  fanSpread: 162, // degrees
+  fanFraming: 0,
   attractor: 'lorenz',
   knotP: 3,
   knotQ: 2,
@@ -24,6 +26,21 @@ export const DEFAULT_PARAMS: Params = {
   // Style
   colorMode: 'spectrum',
   accent: '#FD607B',
+  // custom gradient (used when colorMode === 'custom'): 5 slots, evenly spaced by gradCount
+  gradCount: 4,
+  grad1: '#15B8FF',
+  grad2: '#5B3BE0',
+  grad3: '#C81E9E',
+  grad4: '#FF6B4D',
+  grad5: '#FFD27A',
+  grad1A: 1,
+  grad2A: 1,
+  grad3A: 1,
+  grad4A: 1,
+  grad5A: 1,
+  gradMap: 'fiber',
+  surface: 'dark',
+  surfaceColor: '#0E0F13',
   coreOn: false,
   coreSize: 1.0,
   thickness: 1.4,
@@ -47,6 +64,8 @@ export const DEFAULT_PARAMS: Params = {
   flicker: 6,
   focusOn: true,
   // Motion
+  fanAnchor: 0,
+  tipAttract: false,
   orbitSpeed: 0.06,
   pulseSpeed: 0.35,
   phase: 1.0,
@@ -67,6 +86,7 @@ export type PresetName =
   | 'Torus'
   | 'Disc'
   | 'Fan'
+  | 'Hero'
   | 'Lorenz'
   | 'Superform'
   | 'Knot'
@@ -74,7 +94,7 @@ export type PresetName =
 // preset families (single source of truth for the menu + the cycle order)
 export const SHAPE_PRESETS: PresetName[] = ['Nucleus', 'Wave', 'Drape', 'Cascade', 'Helix', 'Möbius', 'Torus', 'Disc']
 export const MATH_PRESETS: PresetName[] = ['Lorenz', 'Superform', 'Knot']
-export const HERO_PRESETS: PresetName[] = ['Fan']
+export const HERO_PRESETS: PresetName[] = ['Fan', 'Hero']
 export const PRESET_ORDER: PresetName[] = [...SHAPE_PRESETS, ...MATH_PRESETS, ...HERO_PRESETS]
 
 export const PRESETS: Record<PresetName, Partial<Params>> = {
@@ -178,6 +198,35 @@ export const PRESETS: Record<PresetName, Partial<Params>> = {
     focusOn: false,
     orbitSpeed: 0,
     pulseSpeed: 0.25,
+  },
+  // article hero: warm framed dome, apex pinned to the bottom edge, tips drawn to
+  // the cursor — the Stripe-style banner the generator recreates by tuning the fan
+  Hero: {
+    spread: 'fan',
+    colorMode: 'spectrum',
+    accent: '#FF7A4D',
+    nodeCount: 540,
+    radius: 3.4,
+    jitter: 0.05,
+    curl: 0,
+    coreOn: false,
+    thickness: 1.0,
+    glass: 0,
+    dotSize: 1.05,
+    emission: 2.4,
+    bloomIntensity: 1.65,
+    bloomThreshold: 0.15,
+    halftone: false,
+    atmosphere: 0.3,
+    numbersOn: false,
+    mathReadout: false,
+    focusOn: false,
+    orbitSpeed: 0,
+    pulseSpeed: 0.3,
+    fanSpread: 180,
+    fanFraming: 1,
+    fanAnchor: 0.5,
+    tipAttract: true,
   },
   // double helix (DNA)
   Helix: {

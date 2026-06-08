@@ -1,6 +1,13 @@
 import { Color, DataTexture, LinearFilter, RGBAFormat, SRGBColorSpace } from 'three'
 
-export type ColorMode = 'spectrum' | 'nature' | 'single'
+export type ColorMode = 'spectrum' | 'nature' | 'single' | 'custom'
+
+// A user-defined gradient: N evenly spaced colour stops, each with its own alpha.
+export interface CustomGradient {
+  count: number
+  colors: string[]
+  alphas: number[]
+}
 
 // Gradient stops per mode. Sampled by t in [0,1] along the fiber index.
 // cool-dominant spectrum (Gray Matter): cyan -> blue -> indigo -> violet -> magenta -> pink.
@@ -43,18 +50,40 @@ export const ACCENT_WHITE = '#FFFFFF'
 
 export const FOCUS_GREEN = '#3BE08A'
 
+// Sample a custom gradient (evenly spaced stops) for both colour and alpha at t.
+function sampleCustom(grad: CustomGradient, t: number, out: Color): number {
+  const n = Math.max(2, Math.min(grad.colors.length, grad.count))
+  const clamped = Math.min(0.99999, Math.max(0, t))
+  const scaled = clamped * (n - 1)
+  const i = Math.floor(scaled)
+  const f = scaled - i
+  const j = Math.min(n - 1, i + 1)
+  _a.set(grad.colors[i])
+  _b.set(grad.colors[j])
+  out.copy(_a).lerp(_b, f)
+  const a0 = grad.alphas[i] ?? 1
+  const a1 = grad.alphas[j] ?? 1
+  return a0 + (a1 - a0) * f
+}
+
 // Build a 256x1 gradient LUT texture for the given color mode (cheap, no geometry rebuild).
-export function buildLUT(mode: ColorMode, accentHex: string): DataTexture {
+// `custom` supplies the stops (with alpha) used when mode === 'custom'.
+export function buildLUT(mode: ColorMode, accentHex: string, custom?: CustomGradient): DataTexture {
   const w = 256
   const data = new Uint8Array(w * 4)
   const c = new Color()
   for (let x = 0; x < w; x++) {
     const t = x / (w - 1)
-    fiberColor(mode, t, accentHex, c)
+    let alpha = 1
+    if (mode === 'custom' && custom) {
+      alpha = sampleCustom(custom, t, c)
+    } else {
+      fiberColor(mode, t, accentHex, c)
+    }
     data[x * 4] = Math.round(Math.min(1, c.r) * 255)
     data[x * 4 + 1] = Math.round(Math.min(1, c.g) * 255)
     data[x * 4 + 2] = Math.round(Math.min(1, c.b) * 255)
-    data[x * 4 + 3] = 255
+    data[x * 4 + 3] = Math.round(Math.min(1, Math.max(0, alpha)) * 255)
   }
   const tex = new DataTexture(data, w, 1, RGBAFormat)
   tex.colorSpace = SRGBColorSpace

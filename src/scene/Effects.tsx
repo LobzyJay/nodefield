@@ -8,13 +8,15 @@ export function Effects() {
   const grain = useStore((s) => s.grain)
   const vignette = useStore((s) => s.vignette)
   const halftone = useStore((s) => s.halftone)
+  const surface = useStore((s) => s.surface)
+  const light = surface === 'light'
 
   return (
     <EffectComposer multisampling={4}>
       <Bloom
         mipmapBlur
-        intensity={bloomIntensity}
-        luminanceThreshold={bloomThreshold}
+        intensity={light ? bloomIntensity * 0.3 : bloomIntensity}
+        luminanceThreshold={light ? 0.75 : bloomThreshold}
         luminanceSmoothing={0.22}
         radius={0.75}
       />

@@ -163,7 +163,7 @@ export default function App() {
         <>
           <div className="overlay">
             <div className="brand">
-              <img className="brandmark" src="/nodefield-glyph.svg" alt="" width="18" height="18" />
+              <img className="brandmark" src={`${import.meta.env.BASE_URL}nodefield-glyph.svg`} alt="" width="18" height="18" />
               NODEFIELD
             </div>
             <HudMeta />

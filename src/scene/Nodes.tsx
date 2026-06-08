@@ -21,6 +21,7 @@ const VERT = /* glsl */ `
   attribute float aScale;
   uniform float uDotSize;
   uniform float uMorph;
+  uniform vec3 uMouse; // xy = cursor in field space, z = strength (0 = off)
   varying vec2 vUv;
   varying float vT;
   varying float vAccent;
@@ -30,6 +31,12 @@ const VERT = /* glsl */ `
     vT = aT;
     vAccent = aAccent;
     vec3 pos = mix(aOffset, aOffsetB, uMorph);
+    // the cursor plays with the tip dots — push them away when near (matches Fibers)
+    if (uMouse.z > 0.001) {
+      vec2 md = pos.xy - uMouse.xy;
+      float mf = smoothstep(1.6, 0.0, length(md));
+      pos.xy += normalize(md + vec2(1e-4)) * mf * uMouse.z;
+    }
     vec4 mv = modelViewMatrix * vec4(pos, 1.0);
     vViewDepth = -mv.z;
     mv.xy += position.xy * aScale * uDotSize;
@@ -94,11 +101,13 @@ export function Nodes({
   lut,
   drawInValue,
   morphValue,
+  mouseValue,
 }: {
   field: FieldData
   lut: Texture | null
   drawInValue: { current: number }
   morphValue: { current: number }
+  mouseValue: { current: Vector3 }
 }) {
   const matRef = useRef<ShaderMaterial>(null)
   const geometry = useMemo(() => buildGeometry(field), [field])
@@ -114,6 +123,7 @@ export function Nodes({
       uCamDist: { value: 8.5 },
       uFogR: { value: 3.2 },
       uMorph: { value: 0 },
+      uMouse: { value: new Vector3() },
     }),
     [],
   )
@@ -133,6 +143,7 @@ export function Nodes({
     m.uniforms.uCamDist.value = state.camera.position.length()
     m.uniforms.uFogR.value = field.radius
     m.uniforms.uMorph.value = field.nodePosB ? morphValue.current : 0
+    m.uniforms.uMouse.value.copy(mouseValue.current)
   })
 
   return (

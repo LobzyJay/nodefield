@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
-import { Group } from 'three'
+import { Group, Plane, Vector3 } from 'three'
 import { buildField } from '../lib/geometry'
 import { buildLUT } from '../lib/color'
 import { snap, useStore } from '../store/store'
@@ -10,6 +10,10 @@ import { Fibers } from './Fibers'
 import { Nodes } from './Nodes'
 import { Telemetry } from './Telemetry'
 import { Effects } from './Effects'
+
+// the hero fan lies in the world z=0 plane — used to raycast the cursor onto it
+const FAN_PLANE = new Plane(new Vector3(0, 0, 1), 0)
+const FAN_Y = -2.7 // how far the apex is anchored below centre
 
 export function Scene() {
   const structureVersion = useStore((s) => s.structureVersion)
@@ -57,6 +61,9 @@ export function Scene() {
   const groupRef = useRef<Group>(null)
   const drawInRef = useRef(1.2)
   const startRef = useRef(-1)
+  // cursor in field space (xy) + interaction strength (z); the tip shaders read it
+  const mouseRef = useRef(new Vector3(0, 0, 0))
+  const hitVec = useRef(new Vector3())
   // effective morph amount the GPU + telemetry read (manual slider OR entrance)
   const morphRef = useRef(0)
   const morphing = useRef(false)
@@ -107,10 +114,21 @@ export function Scene() {
     const s = snap()
     if (groupRef.current) {
       if (s.spread === 'fan') {
-        // hero fan: keep it flat and anchor the apex near the bottom of the frame
+        // hero fan: locked in one pose. interactivity comes from the cursor playing
+        // with the ray TIPS — raycast the pointer onto the fan plane and hand the
+        // tip shaders a field-space cursor + strength (the apex never moves).
         groupRef.current.rotation.set(0, 0, 0)
-        groupRef.current.position.set(0, -2.7, 0)
+        groupRef.current.position.set(0, FAN_Y, 0)
+        state.raycaster.setFromCamera(state.pointer, state.camera)
+        const hit = state.raycaster.ray.intersectPlane(FAN_PLANE, hitVec.current)
+        if (hit) {
+          // world hit -> field-local (undo the group's downward anchor), strength in z
+          mouseRef.current.set(hit.x, hit.y - FAN_Y, 0.9)
+        } else {
+          mouseRef.current.z = 0
+        }
       } else {
+        mouseRef.current.z = 0
         groupRef.current.position.set(0, 0, 0)
         groupRef.current.rotation.y += s.orbitSpeed * dt
         groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.13) * 0.05
@@ -154,12 +172,13 @@ export function Scene() {
       <fogExp2 attach="fog" args={['#06070A', 0.05]} />
       <group ref={groupRef}>
         {showCore && <Core />}
-        <Fibers field={field} lut={lut} drawInValue={drawInRef} morphValue={morphRef} />
-        <Nodes field={field} lut={lut} drawInValue={drawInRef} morphValue={morphRef} />
+        <Fibers field={field} lut={lut} drawInValue={drawInRef} morphValue={morphRef} mouseValue={mouseRef} />
+        <Nodes field={field} lut={lut} drawInValue={drawInRef} morphValue={morphRef} mouseValue={mouseRef} />
         <Telemetry field={field} radius={field.radius} morphValue={morphRef} />
       </group>
       <OrbitControls
         makeDefault
+        enabled={spread !== 'fan'}
         enableDamping
         dampingFactor={0.08}
         minDistance={3}

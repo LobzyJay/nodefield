@@ -27,6 +27,7 @@ const VERT = /* glsl */ `
   uniform vec2 uResolution;
   uniform float uThickness;
   uniform float uMorph;
+  uniform vec3 uMouse; // xy = cursor in field space, z = strength (0 = off)
   varying float vParam;
   varying float vT;
   varying float vAccent;
@@ -41,6 +42,13 @@ const VERT = /* glsl */ `
 
     vec3 sPos = mix(aStart, aStartB, uMorph);
     vec3 ePos = mix(aEnd, aEndB, uMorph);
+    // the cursor "plays with" the ray tips: push the end (only) away when near it.
+    // the apex stays fixed, so the ray bends toward/around the cursor.
+    if (uMouse.z > 0.001) {
+      vec2 md = ePos.xy - uMouse.xy;
+      float mf = smoothstep(1.6, 0.0, length(md));
+      ePos.xy += normalize(md + vec2(1e-4)) * mf * uMouse.z;
+    }
     vec4 mvStart = modelViewMatrix * vec4(sPos, 1.0);
     vec4 mvEnd = modelViewMatrix * vec4(ePos, 1.0);
     vViewDepth = -mix(mvStart.z, mvEnd.z, along);
@@ -153,11 +161,13 @@ export function Fibers({
   lut,
   drawInValue,
   morphValue,
+  mouseValue,
 }: {
   field: FieldData
   lut: Texture | null
   drawInValue: { current: number }
   morphValue: { current: number }
+  mouseValue: { current: Vector3 }
 }) {
   const { gl } = useThree()
   const matRef = useRef<ShaderMaterial>(null)
@@ -183,6 +193,7 @@ export function Fibers({
       uFogR: { value: 3.2 },
       uGlass: { value: 0.7 },
       uMorph: { value: 0 },
+      uMouse: { value: new Vector3() },
     }),
     [], // created once; values updated each frame
   )
@@ -207,6 +218,7 @@ export function Fibers({
     u.uFogR.value = field.radius
     u.uGlass.value = s.glass
     u.uMorph.value = field.segStartB ? morphValue.current : 0
+    u.uMouse.value.copy(mouseValue.current)
     gl.getDrawingBufferSize(resVec.current)
   })
 

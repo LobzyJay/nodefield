@@ -173,28 +173,49 @@ export function makeAttractor(p: FieldParams): Strand[] {
   const def = ATTRACTORS[p.attractor] ?? ATTRACTORS.lorenz
   const rand = mulberry32(p.seed * 2654435761)
   const steps = Math.min(6000, Math.max(1500, Math.floor(p.nodeCount * 3)))
-  const trajectories = p.nodeCount > 600 ? 3 : 1
-  const strands: Strand[] = []
-  const allForNorm: number[] = []
-  const raw: number[][] = []
+  const wanted = p.nodeCount > 600 ? 3 : 1
+  // some attractors (e.g. Dadras) have a divergent basin a jittered start can fall
+  // into; such a trajectory escapes to ~1e5 and, shared through normalize(), would
+  // shrink every other point to the origin (a black field). Detect + discard it.
+  const BOUND = 1e4
 
-  for (let tr = 0; tr < trajectories; tr++) {
+  const integrate = (jitter: boolean): number[] | null => {
     let [x, y, z] = def.start
-    x += (rand() - 0.5) * 0.4
-    y += (rand() - 0.5) * 0.4
+    if (jitter) {
+      x += (rand() - 0.5) * 0.4
+      y += (rand() - 0.5) * 0.4
+    }
     const pts: number[] = []
     for (let i = 0; i < steps + 300; i++) {
       const [dx, dy, dz] = def.f(x, y, z)
       x += dx * def.dt
       y += dy * def.dt
       z += dz * def.dt
-      if (i > 300) {
-        pts.push(x, y, z)
-        allForNorm.push(x, y, z)
-      }
+      if (!Number.isFinite(x) || Math.abs(x) > BOUND || Math.abs(y) > BOUND || Math.abs(z) > BOUND) return null
+      if (i > 300) pts.push(x, y, z)
     }
-    raw.push(pts)
+    return pts
   }
+
+  const strands: Strand[] = []
+  const allForNorm: number[] = []
+  const raw: number[][] = []
+  for (let tr = 0; tr < wanted; tr++) {
+    const pts = integrate(true)
+    if (pts) {
+      raw.push(pts)
+      for (let i = 0; i < pts.length; i++) allForNorm.push(pts[i])
+    }
+  }
+  // if every jittered start diverged, the unperturbed start is bounded — guarantee one
+  if (raw.length === 0) {
+    const pts = integrate(false)
+    if (pts) {
+      raw.push(pts)
+      for (let i = 0; i < pts.length; i++) allForNorm.push(pts[i])
+    }
+  }
+
   // normalize every trajectory together so they share one frame
   normalize(allForNorm, p.radius, 1.5)
   let cursor = 0

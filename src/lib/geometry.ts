@@ -13,6 +13,7 @@ export type SpreadMode =
   | 'attractor'
   | 'knot'
   | 'superformula'
+  | 'fan'
 
 export type WaveForm = 'curtain' | 'drape' | 'ripple' | 'flag'
 
@@ -22,7 +23,7 @@ export type AttractorType = 'lorenz' | 'aizawa' | 'thomas' | 'halvorsen' | 'dadr
 export type MorphTarget = SpreadMode | 'off'
 
 // shapes that place node i via endpoint() — these can morph into one another
-export const RADIAL = new Set(['sphere', 'disc', 'cascade', 'helix', 'mobius', 'torus', 'superformula'])
+export const RADIAL = new Set(['sphere', 'disc', 'cascade', 'helix', 'mobius', 'torus', 'superformula', 'fan'])
 
 // the golden angle, 137.5 degrees — the default phyllotaxis divergence
 export const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
@@ -109,6 +110,16 @@ function endpoint(p: FieldParams, i: number, n: number, seedPhase: number, out: 
       const r = Math.sqrt((i + 0.5) / n) * radius
       const th = ga * i
       out.set(Math.cos(th) * r, Math.sin(th) * r, 0)
+      break
+    }
+    case 'fan': {
+      // hero fan (the Stripe look): rays from one apex sweeping the upper half-plane,
+      // with varied lengths for an organic spray. Anchored low by the Scene.
+      const t = n > 1 ? i / (n - 1) : 0.5
+      const ang = Math.PI * (0.05 + 0.9 * t) // ~9° .. ~171° CCW from +x → upward fan
+      const lj = (i * 0.6180339887) % 1 // golden-ratio hash → length variety, no banding
+      const rr = radius * (0.5 + 1.05 * lj)
+      out.set(Math.cos(ang) * rr, Math.sin(ang) * rr, 0)
       break
     }
     case 'superformula': {

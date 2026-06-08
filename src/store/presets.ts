@@ -66,12 +66,13 @@ export type PresetName =
   | 'Möbius'
   | 'Torus'
   | 'Disc'
+  | 'Fan'
   | 'Lorenz'
   | 'Superform'
   | 'Knot'
 
 // the two preset families (single source of truth for the menu + the cycle order)
-export const SHAPE_PRESETS: PresetName[] = ['Nucleus', 'Wave', 'Drape', 'Cascade', 'Helix', 'Möbius', 'Torus', 'Disc']
+export const SHAPE_PRESETS: PresetName[] = ['Nucleus', 'Wave', 'Drape', 'Cascade', 'Helix', 'Möbius', 'Torus', 'Disc', 'Fan']
 export const MATH_PRESETS: PresetName[] = ['Lorenz', 'Superform', 'Knot']
 export const PRESET_ORDER: PresetName[] = [...SHAPE_PRESETS, ...MATH_PRESETS]
 
@@ -152,6 +153,30 @@ export const PRESETS: Record<PresetName, Partial<Params>> = {
     density: 0.24,
     decimals: 3,
     pulseSpeed: 0.4,
+  },
+  // hero fan — the Stripe-style radiating burst anchored to the bottom edge
+  Fan: {
+    spread: 'fan',
+    colorMode: 'single',
+    accent: '#BCD0FF',
+    nodeCount: 700,
+    radius: 3.6,
+    jitter: 0.06,
+    curl: 0,
+    coreOn: false,
+    thickness: 0.8,
+    glass: 0,
+    dotSize: 0.7,
+    emission: 1.7,
+    bloomIntensity: 1.15,
+    bloomThreshold: 0.2,
+    halftone: false,
+    atmosphere: 0.35,
+    numbersOn: false,
+    mathReadout: false,
+    focusOn: false,
+    orbitSpeed: 0,
+    pulseSpeed: 0.25,
   },
   // double helix (DNA)
   Helix: {

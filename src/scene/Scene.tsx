@@ -106,8 +106,15 @@ export function Scene() {
   useFrame((state, dt) => {
     const s = snap()
     if (groupRef.current) {
-      groupRef.current.rotation.y += s.orbitSpeed * dt
-      groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.13) * 0.05
+      if (s.spread === 'fan') {
+        // hero fan: keep it flat and anchor the apex near the bottom of the frame
+        groupRef.current.rotation.set(0, 0, 0)
+        groupRef.current.position.set(0, -2.7, 0)
+      } else {
+        groupRef.current.position.set(0, 0, 0)
+        groupRef.current.rotation.y += s.orbitSpeed * dt
+        groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.13) * 0.05
+      }
       const w = window as unknown as { nfGroup: Group; nfCamera: unknown }
       w.nfGroup = groupRef.current
       w.nfCamera = state.camera

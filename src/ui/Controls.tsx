@@ -122,6 +122,7 @@ export function Controls() {
             'attractor (strange)': 'attractor',
             'torus knot': 'knot',
             superformula: 'superformula',
+            'hero fan': 'fan',
           },
           label: 'shape',
           onChange: mk('spread'),

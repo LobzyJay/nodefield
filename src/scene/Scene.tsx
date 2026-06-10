@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { Group, Plane, Vector3 } from 'three'
-import { buildField } from '../lib/geometry'
+import { buildField, TIP_INTERACTIVE } from '../lib/geometry'
 import { buildLUT } from '../lib/color'
 import { snap, useStore } from '../store/store'
 import { Core } from './Core'
@@ -27,6 +27,7 @@ export function Scene() {
   const growReplayId = useStore((s) => s.growReplayId)
   const coreOn = useStore((s) => s.coreOn)
   const spread = useStore((s) => s.spread)
+  const tipAttract = useStore((s) => s.tipAttract)
   const surface = useStore((s) => s.surface)
   const surfaceColor = useStore((s) => s.surfaceColor)
   const bg = surface === 'dark' ? '#06070A' : surface === 'light' ? '#F4F5F7' : surfaceColor
@@ -152,11 +153,30 @@ export function Scene() {
         mouseRef.current.y += (mouseTarget.current.y - mouseRef.current.y) * k
         mouseRef.current.z += (mouseTarget.current.z - mouseRef.current.z) * k
       } else {
-        mouseTarget.current.z = 0
-        mouseRef.current.z = 0
         groupRef.current.position.set(0, 0, 0)
         groupRef.current.rotation.y += s.orbitSpeed * dt
         groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.13) * 0.05
+
+        if (s.tipAttract && TIP_INTERACTIVE.has(s.spread)) {
+          // math/attractor shapes: "tips attract" option — cursor pulls the
+          // field's tips toward it, same feel as the fan but in the group's
+          // own (rotating) local space, so it tracks orbit/spin correctly.
+          state.raycaster.setFromCamera(state.pointer, state.camera)
+          const hit = state.raycaster.ray.intersectPlane(FAN_PLANE, hitVec.current)
+          if (hit) {
+            groupRef.current.worldToLocal(hitVec.current)
+            mouseTarget.current.set(hitVec.current.x, hitVec.current.y, -1.05)
+          } else {
+            mouseTarget.current.z = 0
+          }
+          const k = 1 - Math.exp(-dt / 0.09)
+          mouseRef.current.x += (mouseTarget.current.x - mouseRef.current.x) * k
+          mouseRef.current.y += (mouseTarget.current.y - mouseRef.current.y) * k
+          mouseRef.current.z += (mouseTarget.current.z - mouseRef.current.z) * k
+        } else {
+          mouseTarget.current.z = 0
+          mouseRef.current.z = 0
+        }
       }
       const w = window as unknown as { nfGroup: Group; nfCamera: unknown }
       w.nfGroup = groupRef.current
@@ -203,7 +223,7 @@ export function Scene() {
       </group>
       <OrbitControls
         makeDefault
-        enabled={spread !== 'fan'}
+        enabled={spread !== 'fan' && !(tipAttract && TIP_INTERACTIVE.has(spread))}
         enableDamping
         dampingFactor={0.08}
         minDistance={3}

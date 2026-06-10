@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { button, folder, useControls } from 'leva'
 import { useStore } from '../store/store'
 import { DEFAULT_PARAMS } from '../store/presets'
-import { RADIAL } from '../lib/geometry'
+import { RADIAL, TIP_INTERACTIVE } from '../lib/geometry'
 import type { Params } from '../store/types'
 import { downloadRaster, downloadSVG } from '../lib/export'
 
@@ -235,9 +235,9 @@ export function Controls() {
         },
         tipAttract: {
           value: P.tipAttract,
-          label: 'tip attract',
+          label: 'tips attract',
           onChange: mk('tipAttract'),
-          render: (get) => sp(get) === 'fan',
+          render: (get) => TIP_INTERACTIVE.has(sp(get)),
         },
         attractor: {
           value: P.attractor,

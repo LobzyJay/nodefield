@@ -25,6 +25,10 @@ export type MorphTarget = SpreadMode | 'off'
 // shapes that place node i via endpoint() — these can morph into one another
 export const RADIAL = new Set(['sphere', 'disc', 'cascade', 'helix', 'mobius', 'torus', 'superformula', 'fan'])
 
+// shapes where the cursor can "play with" the field tips — the fan's hero
+// interaction, plus the math/strange-attractor shapes ('tip attract' option)
+export const TIP_INTERACTIVE = new Set(['fan', 'attractor', 'knot', 'superformula'])
+
 // the golden angle, 137.5 degrees — the default phyllotaxis divergence
 export const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
 export const PHI = (1 + Math.sqrt(5)) / 2

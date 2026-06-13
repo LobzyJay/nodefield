@@ -350,6 +350,34 @@ canvas {
   letter-spacing: 0.02em;
 }
 
+.mobile-gate {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 32px;
+  text-align: center;
+  background: #06070a;
+  color: #eef2f7;
+}
+
+.mobile-gate-mark {
+  display: block;
+  opacity: 0.9;
+  margin-bottom: 6px;
+}
+
+.mobile-gate-copy {
+  max-width: 320px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #9aa2ad;
+}
+
 /* reduced motion: drop the looping pulse and the press/transition movement;
    keep colour/opacity changes that aid comprehension */
 @media (prefers-reduced-motion: reduce) {

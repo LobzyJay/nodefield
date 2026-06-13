@@ -151,11 +151,39 @@ function EmbedBar() {
   )
 }
 
+// Nodefield is a desktop instrument — small touch screens can't drive the
+// panel or the drag/scroll interactions, so point mobile visitors at the
+// site instead of dropping them into a cramped, half-working build.
+const MOBILE_QUERY = '(max-width: 760px)'
+
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(MOBILE_QUERY).matches,
+  )
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_QUERY)
+    const onChange = () => setIsMobile(mq.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+  return isMobile
+}
+
+function MobileGate() {
+  return (
+    <div className="mobile-gate">
+      <img className="mobile-gate-mark" src={`${import.meta.env.BASE_URL}nodefield-glyph.svg`} alt="" width="40" height="40" />
+      <p className="mobile-gate-copy">best on desktop — open this link on a bigger screen.</p>
+    </div>
+  )
+}
+
 export default function App() {
   const uiHidden = useHotkeys(EMBED)
   const surface = useStore((s) => s.surface)
   const surfaceColor = useStore((s) => s.surfaceColor)
   const bg = surface === 'dark' ? '#06070A' : surface === 'light' ? '#F4F5F7' : surfaceColor
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     if (EMBED) useStore.getState().embedApply('Nucleus')
@@ -166,6 +194,8 @@ export default function App() {
     document.body.classList.toggle('nf-light', surface === 'light')
     return () => document.body.classList.remove('nf-light')
   }, [surface])
+
+  if (isMobile && !EMBED) return <MobileGate />
 
   return (
     <>

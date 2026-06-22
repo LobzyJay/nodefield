@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Leva } from 'leva'
+import { Analytics } from '@vercel/analytics/react'
 import { Scene } from './scene/Scene'
 import { Controls } from './ui/Controls'
 import { MathReadout } from './ui/MathReadout'
@@ -238,6 +239,7 @@ export default function App() {
       {EMBED && <EmbedBar />}
       <Leva theme={levaTheme} titleBar={{ title: 'NODE TREE' }} collapsed={false} hidden={uiHidden || EMBED} />
       <Controls />
+      <Analytics />
     </>
   )
 }
